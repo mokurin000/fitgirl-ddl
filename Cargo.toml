@@ -1,0 +1,36 @@
+[package]
+name = "fitgirl-ddl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+kanal = { version = "0.1.1", default-features = false, features = ["async"] }
+nyquest = { version = "0.1.1", features = ["async"] }
+nyquest-preset = { version = "0.1.0", features = ["async"] }
+spdlog-rs = { version = "0.4.3", features = [
+    "level-info",
+    "release-level-info",
+    "source-location",
+    "libsystemd",
+    "native",
+] }
+
+compio = { version = "0.14.0", default-features = false, features = [
+    "runtime",
+    "io-uring",
+    "macros",
+] }
+scraper = { version = "0.23.1", features = ["atomic"] }
+argh = "0.1.13"
+futures-util = "0.3.31"
+anyhow = "1.0.98"
+thiserror = "2.0.12"
+url = "2.5.4"
+itertools = "0.14.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
