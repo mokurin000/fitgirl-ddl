@@ -110,12 +110,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "build-env"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1522ac6ee801a11bf9ef3f80403f4ede6eb41291fac3dde3de09989679305f25"
-
-[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -946,17 +940,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
 
 [[package]]
-name = "libsystemd-sys"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed080163caa59cc29b34bce2209b737149a4bac148cd9a8b04e4c12822798119"
-dependencies = [
- "build-env",
- "libc",
- "pkg-config",
-]
-
-[[package]]
 name = "libz-sys"
 version = "1.1.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1714,7 +1697,6 @@ dependencies = [
  "if_chain",
  "is-terminal",
  "libc",
- "libsystemd-sys",
  "once_cell",
  "rustc_version",
  "spdlog-macros",

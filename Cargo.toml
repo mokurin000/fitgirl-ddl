@@ -12,8 +12,6 @@ spdlog-rs = { version = "0.4.3", features = [
     "level-info",
     "release-level-info",
     "source-location",
-    "libsystemd",
-    "native",
 ] }
 
 compio = { version = "0.14.0", default-features = false, features = [
