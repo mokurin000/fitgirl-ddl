@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use fitgirl_ddl::{
     Args, NYQUEST_CLIENT,
     errors::ExtractError,
@@ -9,7 +11,7 @@ use itertools::Itertools;
 use spdlog::{error, info};
 
 #[compio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), Box<dyn Error+Send+Sync>> {
     let Args {
         workers,
         save_dir,
