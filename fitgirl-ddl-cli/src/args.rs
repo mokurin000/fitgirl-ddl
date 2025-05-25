@@ -1,11 +1,6 @@
-use std::{path::PathBuf, sync::OnceLock};
+use std::path::PathBuf;
 
 use argh::FromArgs;
-use nyquest::AsyncClient;
-
-pub mod errors;
-pub mod extract;
-pub mod scrape;
 
 #[derive(FromArgs)]
 #[argh(description = "extract direct download links from fitgirl-repacks.site")]
@@ -26,5 +21,3 @@ pub struct Args {
     #[argh(positional)]
     pub game_urls: Vec<String>,
 }
-
-pub static NYQUEST_CLIENT: OnceLock<AsyncClient> = OnceLock::new();

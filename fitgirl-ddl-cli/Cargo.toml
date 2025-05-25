@@ -1,0 +1,23 @@
+[package]
+name = "fitgirl-ddl-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "fitgirl-ddl"
+path = "./src/main.rs"
+
+[dependencies]
+nyquest-preset = { version = "0.1.0", features = ["async"] }
+itertools = "0.14.0"
+argh = "0.1.13"
+futures-util = "0.3.31"
+spdlog-rs = { version = "0.4.3", features = [
+    "level-info",
+    "release-level-info",
+    "source-location",
+] }
+
+fitgirl-ddl-lib = { workspace = true }
+compio = { workspace = true }
+nyquest = { workspace = true }
