@@ -1,0 +1,9 @@
+[package]
+name = "fitgirl-ddl-gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fitgirl-ddl-lib = { workspace = true }
+compio = { workspace = true }
+nyquest-preset = { workspace = true}

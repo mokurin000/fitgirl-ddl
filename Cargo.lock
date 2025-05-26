@@ -534,9 +534,17 @@ dependencies = [
  "fitgirl-ddl-lib",
  "futures-util",
  "itertools",
- "nyquest",
  "nyquest-preset",
  "spdlog-rs",
+]
+
+[[package]]
+name = "fitgirl-ddl-gui"
+version = "0.1.0"
+dependencies = [
+ "compio",
+ "fitgirl-ddl-lib",
+ "nyquest-preset",
 ]
 
 [[package]]

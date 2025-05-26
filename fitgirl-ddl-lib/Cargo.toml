@@ -7,6 +7,6 @@ edition = "2024"
 scraper = { version = "0.23.1", features = ["atomic"] }
 thiserror = "2.0.12"
 url = "2.5.4"
+nyquest = { version = "0.1.1", features = ["async"] }
 
 compio = { workspace = true }
-nyquest = { workspace = true }

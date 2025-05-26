@@ -1,5 +1,5 @@
 [workspace]
-members = ["fitgirl-ddl-cli", "fitgirl-ddl-lib"]
+members = ["fitgirl-ddl-cli", "fitgirl-ddl-gui", "fitgirl-ddl-lib"]
 resolver = "2"
 
 [profile.release]
@@ -11,7 +11,7 @@ opt-level = "s"
 
 [workspace.dependencies]
 fitgirl-ddl-lib = { path = "./fitgirl-ddl-lib" }
-nyquest = { version = "0.1.1", features = ["async"] }
+nyquest-preset = { version = "0.1.0", features = ["async"] }
 compio = { version = "0.14.0", default-features = false, features = [
     "runtime",
     "io-uring",

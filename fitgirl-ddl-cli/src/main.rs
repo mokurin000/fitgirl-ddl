@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use fitgirl_ddl_lib::{
-    NYQUEST_CLIENT,
+    init_nyquest,
     errors::ExtractError,
     extract::{DDL, extract_ddl},
     scrape::{GameInfo, scrape_game},
@@ -24,15 +24,9 @@ async fn main() -> Result<(), Box<dyn Error+Send+Sync>> {
     info!("workers: {workers}, save_dir: {save_dir:?}");
 
     compio::fs::create_dir_all(&save_dir).await?;
-    nyquest_preset::register();
 
-    let async_client = nyquest::ClientBuilder::default()
-        .user_agent(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
-        )
-        .build_async()
-        .await?;
-    _ = NYQUEST_CLIENT.set(async_client);
+    nyquest_preset::register();
+    init_nyquest().await?;
 
     let scrape_results: Vec<_> = futures_util::stream::iter(game_urls)
         .map(|game_url| {
