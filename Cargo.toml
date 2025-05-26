@@ -17,3 +17,10 @@ compio = { version = "0.14.0", default-features = false, features = [
     "io-uring",
     "macros",
 ] }
+futures-util = "0.3.31"
+itertools = "0.14.0"
+
+spdlog-rs = { version = "0.4.3", default-features = false, features = [
+    "level-info",
+    "release-level-info",
+] }

@@ -3,15 +3,16 @@ name = "fitgirl-ddl-gui"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "fitgirl-ddl_gui"
+path = "src/main.rs"
+
 [dependencies]
 fitgirl-ddl-lib = { workspace = true }
 nyquest-preset = { workspace = true }
 compio = { workspace = true, features = ["time"] }
+futures-util = { workspace = true }
+itertools = { workspace = true }
+spdlog-rs = { workspace = true }
 
 winio = { git = "https://github.com/compio-rs/winio" }
-spdlog-rs = { version = "0.4.3", default-features = false, features = [
-    "level-info",
-    "release-level-info",
-] }
-futures-util = "0.3.31"
-itertools = "0.14.0"
