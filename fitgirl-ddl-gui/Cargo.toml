@@ -8,7 +8,7 @@ fitgirl-ddl-lib = { workspace = true }
 nyquest-preset = { workspace = true }
 compio = { workspace = true, features = ["time"] }
 
-winio = "0.3.3"
+winio = { git = "https://github.com/compio-rs/winio" }
 spdlog-rs = { version = "0.4.3", default-features = false, features = [
     "level-info",
     "release-level-info",
