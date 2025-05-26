@@ -5,5 +5,12 @@ edition = "2024"
 
 [dependencies]
 fitgirl-ddl-lib = { workspace = true }
-compio = { workspace = true }
-nyquest-preset = { workspace = true}
+nyquest-preset = { workspace = true }
+compio = { workspace = true, features = ["time"] }
+
+winio = "0.3.3"
+spdlog-rs = { version = "0.4.3", default-features = false, features = [
+    "level-info",
+    "release-level-info",
+] }
+futures-util = "0.3.31"
