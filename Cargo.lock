@@ -694,6 +694,7 @@ dependencies = [
  "compio",
  "fitgirl-ddl-lib",
  "futures-util",
+ "itertools 0.14.0",
  "nyquest-preset",
  "spdlog-rs",
  "winio",

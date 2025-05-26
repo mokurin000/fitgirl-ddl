@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum ScrapeError {
     #[error("fuckingfast.co source was missing")]
     FuckingFastSourceMissing,
-    #[error("ill-formed url")]
+    #[error("ill-formed url: {0}")]
     IllFormedURL(#[from] url::ParseError),
     #[error("expected link to single game description")]
     UnexpectedURL,

@@ -14,3 +14,4 @@ spdlog-rs = { version = "0.4.3", default-features = false, features = [
     "release-level-info",
 ] }
 futures-util = "0.3.31"
+itertools = "0.14.0"

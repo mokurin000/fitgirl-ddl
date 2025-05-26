@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use fitgirl_ddl_gui::export_ddl;
 use fitgirl_ddl_lib::init_nyquest;
 use spdlog::info;
 
@@ -27,6 +28,7 @@ struct MainModel {
 enum MainMessage {
     Close,
     Redraw,
+    Download,
 }
 
 impl Component for MainModel {
@@ -64,8 +66,12 @@ impl Component for MainModel {
             WindowEvent::Resize => Some(MainMessage::Redraw),
             _ => None,
         });
+        let fut_button = self.button.start(sender, |e| match e {
+            winio::ButtonEvent::Click => Some(MainMessage::Download),
+            _ => unimplemented!(),
+        });
 
-        futures_util::join!(fut_window,);
+        futures_util::join!(fut_window, fut_button,);
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
@@ -75,8 +81,8 @@ impl Component for MainModel {
             MainMessage::Close => {
                 match MessageBox::new()
                     .title("fitgirl-ddl")
-                    .message("确认退出")
-                    .instruction("即将退出程序")
+                    .message("Confirm Exit")
+                    .instruction("This will terminate existing export task!")
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
                     .show(Some(&*self.window))
@@ -87,6 +93,20 @@ impl Component for MainModel {
                     }
                     _ => {}
                 }
+                false
+            }
+            MainMessage::Download => {
+                let msgbox = MessageBox::new()
+                    .title("fitgirl-ddl")
+                    .message("Started exporting direct links...")
+                    .style(MessageBoxStyle::Info)
+                    .show(Some(&*self.window));
+
+                let text = self.url_edit.text();
+                let urls = text.split_whitespace().filter(|s| !s.is_empty());
+                let export = export_ddl(urls, 2);
+
+                futures_util::join!(export, msgbox);
                 false
             }
             MainMessage::Redraw => true,
