@@ -10,7 +10,7 @@ jobs:
     name: Release on ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     env:
-      RUST_BIN_NAME: "fitgirl-ddl"
+      RUST_BIN_NAME: "fitgirl-ddl{,-gui}"
     strategy:
       fail-fast: false
       matrix:
