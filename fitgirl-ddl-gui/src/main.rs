@@ -82,7 +82,7 @@ impl Component for MainModel {
                 match MessageBox::new()
                     .title("fitgirl-ddl")
                     .message("Confirm Exit")
-                    .instruction("This will terminate existing export task!")
+                    .instruction("Are you sure to exit fitgirl-ddl?")
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
                     .show(Some(&*self.window))
@@ -100,6 +100,7 @@ impl Component for MainModel {
                     .title("fitgirl-ddl")
                     .message("Started exporting direct links...")
                     .style(MessageBoxStyle::Info)
+                    .buttons(MessageBoxButton::Ok)
                     .show(Some(&*self.window));
 
                 let text = self.url_edit.text();
