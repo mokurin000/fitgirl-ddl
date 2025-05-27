@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{error::Error, fmt::Write};
+use std::{cell::RefCell, error::Error, fmt::Write, rc::Rc};
 
 use fitgirl_ddl_lib::init_nyquest;
 use spdlog::info;
@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
 #[allow(unused)]
 struct MainModel {
-    window: Child<Window>,
+    window: Rc<RefCell<Child<Window>>>,
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
@@ -64,7 +64,7 @@ impl Component for MainModel {
         .detach();
 
         Self {
-            window,
+            window: Rc::new(RefCell::new(window)),
             url_edit,
             button,
             progress,
@@ -72,7 +72,8 @@ impl Component for MainModel {
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) {
-        let fut_window = self.window.start(sender, |e| match e {
+        let mut window = self.window.borrow_mut();
+        let fut_window = window.start(sender, |e| match e {
             WindowEvent::Close => Some(MainMessage::Close),
             WindowEvent::Resize => Some(MainMessage::Redraw),
             _ => None,
@@ -86,7 +87,9 @@ impl Component for MainModel {
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
-        self.window.update().await;
+        {
+            self.window.borrow_mut().update().await;
+        }
 
         match message {
             MainMessage::Close => {
@@ -96,7 +99,7 @@ impl Component for MainModel {
                     .instruction("Are you sure to exit fitgirl-ddl?")
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
-                    .show(Some(&*self.window))
+                    .show(Some(self.window.borrow().as_window()))
                     .await
                 {
                     MessageBoxResponse::Yes => {
@@ -107,8 +110,9 @@ impl Component for MainModel {
                 false
             }
             MainMessage::Download => {
+                let window = self.window.borrow();
                 let msgbox = popup_message(
-                    Some(&*self.window),
+                    Some(window.as_window()),
                     "Started exporting direct links...",
                     MessageBoxStyle::Info,
                 );
@@ -121,7 +125,7 @@ impl Component for MainModel {
                 match export_result {
                     Err(e) => {
                         popup_message(
-                            Some(&*self.window),
+                            Some(self.window.borrow().as_window()),
                             format!("failed to scrape: {e}"),
                             MessageBoxStyle::Error,
                         )
@@ -149,7 +153,12 @@ impl Component for MainModel {
                             _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
                         }
 
-                        popup_message(Some(&*self.window), message, MessageBoxStyle::Info).await
+                        popup_message(
+                            Some(self.window.borrow().as_window()),
+                            message,
+                            MessageBoxStyle::Info,
+                        )
+                        .await
                     }
                 }
                 false
@@ -169,7 +178,7 @@ impl Component for MainModel {
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
-        self.window.render();
+        self.window.borrow_mut().render();
 
         let mut layout = StackPanel::new(winio::Orient::Horizontal);
         layout.push(&mut self.url_edit).grow(true).finish();
@@ -178,7 +187,7 @@ impl Component for MainModel {
         let mut layout_final = StackPanel::new(winio::Orient::Vertical);
         layout_final.push(&mut layout).grow(true).finish();
         layout_final.push(&mut self.progress).finish();
-        layout_final.set_size(self.window.client_size());
+        layout_final.set_size(self.window.borrow().client_size());
     }
 }
 
