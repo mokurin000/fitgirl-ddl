@@ -2,6 +2,9 @@ use fitgirl_ddl_lib::{errors::ExtractError, extract::{extract_ddl, DDL}, scrape:
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
 use spdlog::{error, info, warn};
+use winio::ComponentSender;
+
+use crate::{MainMessage, MainModel};
 
 pub struct ExtractionInfo {
     pub saved_files: Vec<String>,
@@ -9,8 +12,7 @@ pub struct ExtractionInfo {
     pub scrape_errors: Vec<String>,
 }
 
-pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, workers: usize) -> Result<ExtractionInfo, ExtractError> {
-
+pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, workers: usize, sender: &ComponentSender<MainModel>) -> Result<ExtractionInfo, ExtractError> {
     let scrape_results: Vec<_> = futures_util::stream::iter(game_urls.map(Into::into).collect::<Vec<String>>())
         .map(|game_url| {
             info!("processing {game_url}");
@@ -30,6 +32,7 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
     let mut saved_files = Vec::new();
     let mut missing_files = Vec::new();
     let mut scrape_errors = Vec::new();
+
     for (game_url, result) in scrape_results {
         let GameInfo { path_part, fuckingfast_links } = match result {
             Ok(r) => r,
@@ -39,6 +42,7 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
                 continue
             },
         };
+        sender.post(MainMessage::IncreaseCap(fuckingfast_links.len()));
 
         let output_file = format!("{path_part}.txt");
 
@@ -48,9 +52,11 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
             .map(|ff_url| {
                 info!("processing {ff_url}");
                 async move {
-                    extract_ddl(&ff_url).await.inspect_err(|e| {
+                    let result = extract_ddl(&ff_url).await.inspect_err(|e| {
                         error!("failed to extract {ff_url}: {e}");
-                    })
+                    });
+                    sender.post(MainMessage::IncreaseCount);
+                    result
                 }
             })
             .buffer_unordered(workers)

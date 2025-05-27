@@ -2,14 +2,17 @@
 
 use std::{error::Error, fmt::Write};
 
-use fitgirl_ddl_gui::{ExtractionInfo, export_ddl};
 use fitgirl_ddl_lib::init_nyquest;
 use spdlog::info;
+
+mod utils;
+use utils::{ExtractionInfo, export_ddl};
 
 use compio::runtime::spawn;
 use winio::{
     App, AsWindow, Button, Child, Component, ComponentSender, Edit, Layoutable, MessageBox,
-    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Size, StackPanel, Window, WindowEvent,
+    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel, Window,
+    WindowEvent,
 };
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -24,6 +27,7 @@ struct MainModel {
     window: Child<Window>,
     button: Child<Button>,
     url_edit: Child<Edit>,
+    progress: Child<Progress>,
 }
 
 #[derive(Debug)]
@@ -31,6 +35,8 @@ enum MainMessage {
     Close,
     Redraw,
     Download,
+    IncreaseCount,
+    IncreaseCap(usize),
 }
 
 impl Component for MainModel {
@@ -43,11 +49,13 @@ impl Component for MainModel {
         let mut window = Child::<Window>::init((), &());
 
         window.set_text("fitgirl-ddl");
-        window.set_size(Size::new(800.0, 80.0));
+        window.set_size(Size::new(800.0, 150.0));
 
         let url_edit = Child::<Edit>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
-        button.set_text("  提交  ");
+        button.set_text("Submit");
+        let mut progress = Child::<Progress>::init((), &window);
+        progress.set_range(0, 0);
 
         spawn(async {
             info!("init: nyquest");
@@ -59,6 +67,7 @@ impl Component for MainModel {
             window,
             url_edit,
             button,
+            progress,
         }
     }
 
@@ -106,7 +115,7 @@ impl Component for MainModel {
 
                 let text = self.url_edit.text();
                 let urls = text.split_whitespace().filter(|s| !s.is_empty());
-                let export = export_ddl(urls, 2);
+                let export = export_ddl(urls, 2, sender);
 
                 let (export_result, ..) = futures_util::join!(export, msgbox);
                 match export_result {
@@ -146,6 +155,16 @@ impl Component for MainModel {
                 false
             }
             MainMessage::Redraw => true,
+            MainMessage::IncreaseCount => {
+                let pos = self.progress.pos() + 1;
+                self.progress.set_pos(pos);
+                true
+            }
+            MainMessage::IncreaseCap(new) => {
+                let max = self.progress.range().1;
+                self.progress.set_range(0, max + new);
+                false
+            }
         }
     }
 
@@ -155,7 +174,11 @@ impl Component for MainModel {
         let mut layout = StackPanel::new(winio::Orient::Horizontal);
         layout.push(&mut self.url_edit).grow(true).finish();
         layout.push(&mut self.button).finish();
-        layout.set_size(self.window.client_size());
+
+        let mut layout_final = StackPanel::new(winio::Orient::Vertical);
+        layout_final.push(&mut layout).grow(true).finish();
+        layout_final.push(&mut self.progress).finish();
+        layout_final.set_size(self.window.client_size());
     }
 }
 
