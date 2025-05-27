@@ -33,6 +33,11 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
     let mut missing_files = Vec::new();
     let mut scrape_errors = Vec::new();
 
+    let total = scrape_results.iter().filter_map(|r| r.1.as_ref().ok())
+        .map(|GameInfo {fuckingfast_links, .. }| fuckingfast_links.len())
+        .sum::<usize>();
+    sender.post(MainMessage::SetMaxCap(total));
+
     for (game_url, result) in scrape_results {
         let GameInfo { path_part, fuckingfast_links } = match result {
             Ok(r) => r,
@@ -42,7 +47,6 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
                 continue
             },
         };
-        sender.post(MainMessage::IncreaseCap(fuckingfast_links.len()));
 
         let output_file = format!("{path_part}.txt");
 

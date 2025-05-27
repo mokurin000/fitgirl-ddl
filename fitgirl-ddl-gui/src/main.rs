@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{cell::RefCell, error::Error, fmt::Write, rc::Rc};
+use std::{error::Error, fmt::Write};
 
 use fitgirl_ddl_lib::init_nyquest;
 use spdlog::info;
@@ -24,10 +24,11 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
 #[allow(unused)]
 struct MainModel {
-    window: Rc<RefCell<Child<Window>>>,
+    window: Child<Window>,
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
+    downloading: bool,
 }
 
 #[derive(Debug)]
@@ -35,8 +36,9 @@ enum MainMessage {
     Close,
     Redraw,
     Download,
+    DownloadDone,
     IncreaseCount,
-    IncreaseCap(usize),
+    SetMaxCap(usize),
 }
 
 impl Component for MainModel {
@@ -64,15 +66,16 @@ impl Component for MainModel {
         .detach();
 
         Self {
-            window: Rc::new(RefCell::new(window)),
+            window,
             url_edit,
             button,
             progress,
+            downloading: false,
         }
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) {
-        let mut window = self.window.borrow_mut();
+        let window = &mut self.window;
         let fut_window = window.start(sender, |e| match e {
             WindowEvent::Close => Some(MainMessage::Close),
             WindowEvent::Resize => Some(MainMessage::Redraw),
@@ -88,7 +91,7 @@ impl Component for MainModel {
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
         {
-            self.window.borrow_mut().update().await;
+            self.window.update().await;
         }
 
         match message {
@@ -99,7 +102,7 @@ impl Component for MainModel {
                     .instruction("Are you sure to exit fitgirl-ddl?")
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
-                    .show(Some(self.window.borrow().as_window()))
+                    .show(Some(self.window.as_window()))
                     .await
                 {
                     MessageBoxResponse::Yes => {
@@ -109,76 +112,86 @@ impl Component for MainModel {
                 }
                 false
             }
+            MainMessage::DownloadDone => {
+                self.downloading = false;
+                false
+            }
             MainMessage::Download => {
-                let window = self.window.borrow();
-                let msgbox = popup_message(
-                    Some(window.as_window()),
-                    "Started exporting direct links...",
-                    MessageBoxStyle::Info,
-                );
+                if self.downloading {
+                    return false;
+                }
 
                 let text = self.url_edit.text();
-                let urls = text.split_whitespace().filter(|s| !s.is_empty());
-                let export = export_ddl(urls, 2, sender);
+                let sender = sender.clone();
 
-                let (export_result, ..) = futures_util::join!(export, msgbox);
-                match export_result {
-                    Err(e) => {
-                        popup_message(
-                            Some(self.window.borrow().as_window()),
-                            format!("failed to scrape: {e}"),
-                            MessageBoxStyle::Error,
-                        )
-                        .await
+                self.downloading = true;
+
+                // reset range
+                self.progress.set_range(0, 0);
+
+                _ = spawn(async move {
+                    let urls = text.split([' ', '\n', '\t']).filter(|s| !s.is_empty());
+                    let export = export_ddl(urls, 2, &sender);
+
+                    let (export_result, ..) = futures_util::join!(export);
+                    match export_result {
+                        Err(e) => {
+                            popup_message(
+                                Option::<Window>::None,
+                                format!("failed to scrape: {e}"),
+                                MessageBoxStyle::Error,
+                            )
+                            .await
+                        }
+                        Ok(ExtractionInfo {
+                            saved_files,
+                            missing_files,
+                            scrape_errors,
+                        }) => {
+                            let exported = saved_files.join("\n");
+                            let missing = missing_files.join("\n");
+                            let errors = scrape_errors.join("\n");
+
+                            let mut message = String::new();
+
+                            if !exported.is_empty() {
+                                _ = message.write_fmt(format_args!("Exported:\n{exported}\n"));
+                            }
+                            if !missing.is_empty() {
+                                _ = message.write_fmt(format_args!(
+                                    "File Not Found Or Deleted:\n{missing}\n"
+                                ));
+                            }
+                            if !errors.is_empty() {
+                                _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
+                            }
+
+                            popup_message(Option::<Window>::None, message, MessageBoxStyle::Info)
+                                .await
+                        }
                     }
-                    Ok(ExtractionInfo {
-                        saved_files,
-                        missing_files,
-                        scrape_errors,
-                    }) => {
-                        let exported = saved_files.join("\n");
-                        let missing = missing_files.join("\n");
-                        let errors = scrape_errors.join("\n");
 
-                        let mut message = String::new();
+                    sender.post(MainMessage::DownloadDone);
+                })
+                .detach();
 
-                        if !exported.is_empty() {
-                            _ = message.write_fmt(format_args!("Exported:\n{exported}\n"));
-                        }
-                        if !missing.is_empty() {
-                            _ = message
-                                .write_fmt(format_args!("File Not Found Or Deleted:\n{missing}\n"));
-                        }
-                        if !errors.is_empty() {
-                            _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
-                        }
-
-                        popup_message(
-                            Some(self.window.borrow().as_window()),
-                            message,
-                            MessageBoxStyle::Info,
-                        )
-                        .await
-                    }
-                }
                 false
             }
             MainMessage::Redraw => true,
             MainMessage::IncreaseCount => {
                 let pos = self.progress.pos() + 1;
                 self.progress.set_pos(pos);
-                true
+                false
             }
-            MainMessage::IncreaseCap(new) => {
-                let max = self.progress.range().1;
-                self.progress.set_range(0, max + new);
+            MainMessage::SetMaxCap(new) => {
+                self.progress.set_range(0, new);
                 false
             }
         }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
-        self.window.borrow_mut().render();
+        self.window.render();
 
         let mut layout = StackPanel::new(winio::Orient::Horizontal);
         layout.push(&mut self.url_edit).grow(true).finish();
@@ -187,7 +200,7 @@ impl Component for MainModel {
         let mut layout_final = StackPanel::new(winio::Orient::Vertical);
         layout_final.push(&mut layout).grow(true).finish();
         layout_final.push(&mut self.progress).finish();
-        layout_final.set_size(self.window.borrow().client_size());
+        layout_final.set_size(self.window.client_size());
     }
 }
 
