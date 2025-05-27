@@ -15,6 +15,9 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 spdlog-rs = { workspace = true }
 
-winio = { git = "https://github.com/compio-rs/winio", default-features = false, features = [
-    "gtk",
-] }
+winio = { git = "https://github.com/compio-rs/winio", default-features = false }
+
+[features]
+default = ["gtk"]
+gtk = ["winio/gtk"]
+qt = ["winio/qt"]

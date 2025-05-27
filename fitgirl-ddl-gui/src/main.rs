@@ -51,7 +51,7 @@ impl Component for MainModel {
         let mut window = Child::<Window>::init((), &());
 
         window.set_text("fitgirl-ddl");
-        window.set_size(Size::new(800.0, 150.0));
+        window.set_size(Size::new(800.0, 80.0));
 
         let url_edit = Child::<Edit>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
@@ -166,7 +166,7 @@ impl Component for MainModel {
                                 _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
                             }
 
-                            popup_message(Option::<Window>::None, message, MessageBoxStyle::Info)
+                            popup_message(Option::<Window>::None, message.trim(), MessageBoxStyle::Info)
                                 .await
                         }
                     }
