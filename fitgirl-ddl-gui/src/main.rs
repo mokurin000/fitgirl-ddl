@@ -1,13 +1,15 @@
-use std::error::Error;
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use fitgirl_ddl_gui::export_ddl;
+use std::{error::Error, fmt::Write};
+
+use fitgirl_ddl_gui::{ExtractionInfo, export_ddl};
 use fitgirl_ddl_lib::init_nyquest;
 use spdlog::info;
 
 use compio::runtime::spawn;
 use winio::{
-    App, Button, Child, Component, ComponentSender, Edit, Layoutable, MessageBox, MessageBoxButton,
-    MessageBoxResponse, MessageBoxStyle, Size, StackPanel, Window, WindowEvent,
+    App, AsWindow, Button, Child, Component, ComponentSender, Edit, Layoutable, MessageBox,
+    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Size, StackPanel, Window, WindowEvent,
 };
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -80,7 +82,7 @@ impl Component for MainModel {
         match message {
             MainMessage::Close => {
                 match MessageBox::new()
-                    .title("fitgirl-ddl")
+                    .title(env!("CARGO_PKG_NAME"))
                     .message("Confirm Exit")
                     .instruction("Are you sure to exit fitgirl-ddl?")
                     .style(MessageBoxStyle::Info)
@@ -96,18 +98,51 @@ impl Component for MainModel {
                 false
             }
             MainMessage::Download => {
-                let msgbox = MessageBox::new()
-                    .title("fitgirl-ddl")
-                    .message("Started exporting direct links...")
-                    .style(MessageBoxStyle::Info)
-                    .buttons(MessageBoxButton::Ok)
-                    .show(Some(&*self.window));
+                let msgbox = popup_message(
+                    Some(&*self.window),
+                    "Started exporting direct links...",
+                    MessageBoxStyle::Info,
+                );
 
                 let text = self.url_edit.text();
                 let urls = text.split_whitespace().filter(|s| !s.is_empty());
                 let export = export_ddl(urls, 2);
 
-                futures_util::join!(export, msgbox);
+                let (export_result, ..) = futures_util::join!(export, msgbox);
+                match export_result {
+                    Err(e) => {
+                        popup_message(
+                            Some(&*self.window),
+                            format!("failed to scrape: {e}"),
+                            MessageBoxStyle::Error,
+                        )
+                        .await
+                    }
+                    Ok(ExtractionInfo {
+                        saved_files,
+                        missing_files,
+                        scrape_errors,
+                    }) => {
+                        let exported = saved_files.join("\n");
+                        let missing = missing_files.join("\n");
+                        let errors = scrape_errors.join("\n");
+
+                        let mut message = String::new();
+
+                        if !exported.is_empty() {
+                            _ = message.write_fmt(format_args!("Exported:\n{exported}\n"));
+                        }
+                        if !missing.is_empty() {
+                            _ = message
+                                .write_fmt(format_args!("File Not Found Or Deleted:\n{missing}\n"));
+                        }
+                        if !errors.is_empty() {
+                            _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
+                        }
+
+                        popup_message(Some(&*self.window), message, MessageBoxStyle::Info).await
+                    }
+                }
                 false
             }
             MainMessage::Redraw => true,
@@ -122,4 +157,18 @@ impl Component for MainModel {
         layout.push(&mut self.button).finish();
         layout.set_size(self.window.client_size());
     }
+}
+
+async fn popup_message(
+    parent: Option<impl AsWindow>,
+    message: impl AsRef<str>,
+    level: MessageBoxStyle,
+) {
+    MessageBox::new()
+        .title(env!("CARGO_PKG_NAME"))
+        .message(message)
+        .style(level)
+        .buttons(MessageBoxButton::Ok)
+        .show(parent)
+        .await;
 }

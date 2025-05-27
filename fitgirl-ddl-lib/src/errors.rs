@@ -38,7 +38,7 @@ pub enum ExtractError {
     #[error("rate limited")]
     RateLimited,
     #[error("file was deleted")]
-    FileNotFound,
+    FileNotFound(String),
 }
 
 impl From<SelectorErrorKind<'_>> for ExtractError {

@@ -30,7 +30,7 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
     }
 
     if resp.contains("File Not Found Or Deleted") {
-        return Err(ExtractError::FileNotFound);
+        return Err(ExtractError::FileNotFound(filename));
     }
 
     let direct_link = compio::runtime::spawn_blocking(move || parse_html(resp))
