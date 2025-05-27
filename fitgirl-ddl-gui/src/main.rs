@@ -55,7 +55,7 @@ impl Component for MainModel {
 
         let url_edit = Child::<Edit>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
-        button.set_text("Submit");
+        button.set_text(" Submit ");
         let mut progress = Child::<Progress>::init((), &window);
         progress.set_range(0, 0);
 
