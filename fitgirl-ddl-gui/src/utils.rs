@@ -12,7 +12,7 @@ pub struct ExtractionInfo {
     pub scrape_errors: Vec<String>,
 }
 
-pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, workers: usize, sender: &ComponentSender<MainModel>) -> Result<ExtractionInfo, ExtractError> {
+pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, workers: usize, sender: &ComponentSender<MainModel> , selective: bool)-> Result<ExtractionInfo, ExtractError> {
     let scrape_results: Vec<_> = futures_util::stream::iter(game_urls.map(Into::into).collect::<Vec<String>>())
         .map(|game_url| {
             info!("processing {game_url}");
@@ -81,6 +81,10 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
                 Ok(result) => results.push(result),
                 _ => continue,
             }
+        }
+
+        if selective {
+            warn!("unimplemented: selective download")
         }
 
         #[rustfmt::skip] 

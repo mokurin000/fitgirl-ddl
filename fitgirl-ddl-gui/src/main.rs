@@ -10,9 +10,9 @@ use utils::{ExtractionInfo, export_ddl};
 
 use compio::runtime::spawn;
 use winio::{
-    App, AsWindow, Button, Child, Component, ComponentSender, Edit, Layoutable, MessageBox,
-    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel, Window,
-    WindowEvent,
+    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Edit, Layoutable,
+    MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
+    Window, WindowEvent,
 };
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -28,6 +28,7 @@ struct MainModel {
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
+    selective_download: Child<CheckBox>,
     downloading: bool,
 }
 
@@ -51,13 +52,15 @@ impl Component for MainModel {
         let mut window = Child::<Window>::init((), &());
 
         window.set_text("fitgirl-ddl");
-        window.set_size(Size::new(800.0, 80.0));
+        window.set_size(Size::new(800.0, 100.0));
 
         let url_edit = Child::<Edit>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
         button.set_text(" Submit ");
         let mut progress = Child::<Progress>::init((), &window);
         progress.set_range(0, 0);
+        let mut selective_download = Child::<CheckBox>::init((), &window);
+        selective_download.set_text("Selective");
 
         spawn(async {
             info!("init: nyquest");
@@ -71,6 +74,7 @@ impl Component for MainModel {
             button,
             progress,
             downloading: false,
+            selective_download,
         }
     }
 
@@ -83,10 +87,11 @@ impl Component for MainModel {
         });
         let fut_button = self.button.start(sender, |e| match e {
             winio::ButtonEvent::Click => Some(MainMessage::Download),
-            _ => unimplemented!(),
+            _ => None,
         });
+        let fut_cbox = self.selective_download.start(sender, |_| None);
 
-        futures_util::join!(fut_window, fut_button,);
+        futures_util::join!(fut_window, fut_button, fut_cbox);
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
@@ -122,16 +127,21 @@ impl Component for MainModel {
                 }
 
                 let text = self.url_edit.text();
+                if text.trim().is_empty() {
+                    return false;
+                }
+
                 let sender = sender.clone();
 
                 self.downloading = true;
 
                 // reset range
                 self.progress.set_range(0, 0);
+                let selective = self.selective_download.is_checked();
 
                 _ = spawn(async move {
                     let urls = text.split([' ', '\n', '\t']).filter(|s| !s.is_empty());
-                    let export = export_ddl(urls, 2, &sender);
+                    let export = export_ddl(urls, 2, &sender, selective);
 
                     let (export_result, ..) = futures_util::join!(export);
                     match export_result {
@@ -166,8 +176,12 @@ impl Component for MainModel {
                                 _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
                             }
 
-                            popup_message(Option::<Window>::None, message.trim(), MessageBoxStyle::Info)
-                                .await
+                            popup_message(
+                                Option::<Window>::None,
+                                message.trim(),
+                                MessageBoxStyle::Info,
+                            )
+                            .await
                         }
                     }
 
@@ -197,8 +211,15 @@ impl Component for MainModel {
         layout.push(&mut self.url_edit).grow(true).finish();
         layout.push(&mut self.button).finish();
 
+        let mut layout2 = StackPanel::new(winio::Orient::Horizontal);
+        layout2
+            .push(&mut self.selective_download)
+            .grow(true)
+            .finish();
+
         let mut layout_final = StackPanel::new(winio::Orient::Vertical);
         layout_final.push(&mut layout).grow(true).finish();
+        layout_final.push(&mut layout2).finish();
         layout_final.push(&mut self.progress).finish();
         layout_final.set_size(self.window.client_size());
     }
