@@ -3,7 +3,7 @@
 use std::{error::Error, fmt::Write};
 
 use fitgirl_ddl_lib::init_nyquest;
-use spdlog::info;
+use spdlog::{Level, debug, info};
 
 mod utils;
 use utils::{ExtractionInfo, export_ddl};
@@ -17,6 +17,14 @@ use winio::{
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     nyquest_preset::register();
+
+    spdlog::default_logger().set_level_filter(spdlog::LevelFilter::MoreSevereEqual(
+        if cfg!(debug_assertions) {
+            Level::Debug
+        } else {
+            Level::Info
+        },
+    ));
 
     App::new().run::<MainModel>((), &());
     Ok(())
@@ -193,12 +201,16 @@ impl Component for MainModel {
             }
             MainMessage::Redraw => true,
             MainMessage::IncreaseCount => {
+                debug!("received increasement!");
+
                 let pos = self.progress.pos() + 1;
                 self.progress.set_pos(pos);
                 false
             }
             MainMessage::SetMaxCap(new) => {
                 self.progress.set_range(0, new);
+                self.progress.set_pos(0);
+
                 false
             }
         }
