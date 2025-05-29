@@ -67,7 +67,7 @@ impl Component for MainModel {
         let mut button = Child::<Button>::init((), &window);
         button.set_text(" Submit ");
         let mut progress = Child::<Progress>::init((), &window);
-        progress.set_range(0, 0);
+        progress.set_range(0, 1);
         let mut selective_download = Child::<CheckBox>::init((), &window);
         selective_download.set_text("Selective");
 
