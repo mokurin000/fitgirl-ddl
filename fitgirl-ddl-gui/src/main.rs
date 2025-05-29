@@ -38,6 +38,7 @@ struct MainModel {
     progress: Child<Progress>,
     selective_download: Child<CheckBox>,
     downloading: bool,
+    position: usize,
 }
 
 #[derive(Debug)]
@@ -81,8 +82,9 @@ impl Component for MainModel {
             url_edit,
             button,
             progress,
-            downloading: false,
             selective_download,
+            downloading: false,
+            position: 0,
         }
     }
 
@@ -201,15 +203,19 @@ impl Component for MainModel {
             }
             MainMessage::Redraw => true,
             MainMessage::IncreaseCount => {
-                debug!("received increasement!");
+                self.position += 1;
 
-                let pos = self.progress.pos() + 1;
-                self.progress.set_pos(pos);
+                debug!("received increasement! new pos: {}", self.position);
+                self.progress.set_pos(self.position);
+
                 false
             }
             MainMessage::SetMaxCap(new) => {
+                debug!("received max capacity! new cap: {new}");
+
                 self.progress.set_range(0, new);
                 self.progress.set_pos(0);
+                self.position = 0;
 
                 false
             }
