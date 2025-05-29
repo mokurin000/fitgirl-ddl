@@ -3,7 +3,25 @@
 Extract direct download links from fitgirl-repacks.site (must have fuckingfast.co source),
 export to aria2 input file.
 
+## Installation
+
+### Windows/MacOS
+
 CLI/GUI version for Windows/MacOS and CLI version for Linux are avaliable in [releases](https://github.com/mokurin000/fitgirl-ddl/releases/latest)
+
+### ArchLinux
+
+CLI version:
+
+```
+paru -S fitgirl-ddl
+```
+
+GUI version, GTK4+:
+
+```bash
+paru -S fitgirl-ddl-gtk4
+```
 
 ## Screenshots
 
