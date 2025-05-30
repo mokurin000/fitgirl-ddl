@@ -1,5 +1,7 @@
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
+use futures_util::StreamExt as _;
+use itertools::Itertools;
 use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Window};
 
 use crate::utils::write_aria2_input;
@@ -19,6 +21,12 @@ pub enum SelectMessage {
     CloseWindow,
     Refresh,
     SaveFile,
+}
+
+#[derive(Debug)]
+pub enum SelectEvent {
+    Update,
+    Close,
 }
 
 pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
@@ -46,7 +54,7 @@ impl Component for SelectWindow {
     type Init = (AHashMap<String, Vec<DDL>>, String);
     type Root = ();
     type Message = SelectMessage;
-    type Event = ();
+    type Event = SelectEvent;
 
     fn init(
         (groups, game_name): Self::Init,
@@ -58,7 +66,7 @@ impl Component for SelectWindow {
         window.set_size(Size::new(500., 500.));
 
         let mut checkbox = Vec::with_capacity(groups.len());
-        for group_name in groups.keys() {
+        for group_name in groups.keys().sorted() {
             let mut cbox = Child::<CheckBox>::init((), &window);
             cbox.set_text(group_name);
 
@@ -88,16 +96,23 @@ impl Component for SelectWindow {
         let fut_window = self.window.start(sender, |e| match e {
             winio::WindowEvent::Close => Some(SelectMessage::CloseWindow),
             winio::WindowEvent::Resize => Some(SelectMessage::Refresh),
+            winio::WindowEvent::Move => Some(SelectMessage::Refresh),
             _ => None,
         });
         let fut_submit = self.submit.start(sender, |e| match e {
             winio::ButtonEvent::Click => {
-                sender.output(());
+                sender.output(SelectEvent::Update);
                 Some(SelectMessage::SaveFile)
             }
             _ => None,
         });
-        futures_util::join!(fut_window, fut_submit);
+        let fut_cboxes = futures_util::stream::iter(&mut self.checkbox)
+            .map(async |c| {
+                c.start(sender, |_| None).await;
+            })
+            .count();
+
+        futures_util::join!(fut_window, fut_submit, fut_cboxes);
     }
 
     async fn update(
@@ -107,10 +122,13 @@ impl Component for SelectWindow {
     ) -> bool {
         match message {
             SelectMessage::CloseWindow => {
-                sender.output(());
+                sender.output(SelectEvent::Close);
                 false
             }
-            SelectMessage::Refresh => true,
+            SelectMessage::Refresh => {
+                sender.output(SelectEvent::Update);
+                true
+            }
             SelectMessage::SaveFile => {
                 let ddls: Vec<_> = self
                     .checkbox
@@ -139,7 +157,6 @@ impl Component for SelectWindow {
         layout_out.push(&mut layout).grow(true).finish();
         layout_out.push(&mut self.submit).grow(false).finish();
 
-        self.window.set_size(layout_out.preferred_size());
         layout_out.set_size(self.window.client_size());
     }
 }

@@ -1,9 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{error::Error, fmt::Write};
+use std::{error::Error, fmt::Write, sync::Arc};
 
 use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
-use spdlog::{Level, debug, info};
+use spdlog::{Level, debug, info, sink::FileSink};
 
 mod utils;
 use utils::{ExtractionInfo, export_ddl};
@@ -28,6 +28,16 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             Level::Info
         },
     ));
+    let new_logger = spdlog::default_logger().fork_with(|log| {
+        let file_sink = Arc::new(
+            FileSink::builder()
+                .path(concat!(env!("CARGO_PKG_NAME"), ".log"))
+                .build()?,
+        );
+        log.sinks_mut().push(file_sink);
+        Ok(())
+    })?;
+    spdlog::set_default_logger(new_logger);
 
     App::new().run::<MainModel>((), &());
     Ok(())
@@ -192,12 +202,8 @@ impl Component for MainModel {
                                 _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
                             }
 
-                            popup_message(
-                                Option::<Window>::None,
-                                message.trim(),
-                                MessageBoxStyle::Info,
-                            )
-                            .await
+                            let message = message.trim();
+                            info!("{message}");
                         }
                     }
 
@@ -236,7 +242,12 @@ impl Component for MainModel {
                     let sender = sender.clone();
                     compio::runtime::spawn(async move {
                         if let Some(swindow) = ptr_window.as_mut() {
-                            swindow.start(&sender, |_| Some(MainMessage::Redraw)).await;
+                            swindow
+                                .start(&sender, |e| match e {
+                                    select_box::SelectEvent::Update => Some(MainMessage::Redraw),
+                                    select_box::SelectEvent::Close => None,
+                                })
+                                .await;
                         }
                     })
                     .detach();
