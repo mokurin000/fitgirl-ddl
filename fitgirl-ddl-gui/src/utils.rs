@@ -1,4 +1,10 @@
-use fitgirl_ddl_lib::{errors::ExtractError, extract::{extract_ddl, DDL}, scrape::{scrape_game, GameInfo}};
+use std::path::{Path, };
+
+use fitgirl_ddl_lib::{
+    errors::ExtractError,
+    extract::{DDL, extract_ddl},
+    scrape::{GameInfo, scrape_game},
+};
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
 use spdlog::{error, info, warn};
@@ -12,40 +18,55 @@ pub struct ExtractionInfo {
     pub scrape_errors: Vec<String>,
 }
 
-pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, workers: usize, sender: &ComponentSender<MainModel> , selective: bool)-> Result<ExtractionInfo, ExtractError> {
-    let scrape_results: Vec<_> = futures_util::stream::iter(game_urls.map(Into::into).collect::<Vec<String>>())
-        .map(|game_url| {
-            info!("processing {game_url}");
-            async move {
-                (game_url.clone(),
-                scrape_game(&game_url)
-                    .await
-                    .inspect_err(|e| {
-                        error!("failed to scrape {game_url}: {e}");
-                    }))
-            }
-        })
-        .buffer_unordered(workers)
-        .collect()
-        .await;
+pub async fn export_ddl(
+    game_urls: impl Iterator<Item = impl Into<String>>,
+    workers: usize,
+    sender: &ComponentSender<MainModel>,
+    selective: bool,
+) -> Result<ExtractionInfo, ExtractError> {
+    let scrape_results: Vec<_> =
+        futures_util::stream::iter(game_urls.map(Into::into).collect::<Vec<String>>())
+            .map(|game_url| {
+                info!("processing {game_url}");
+                async move {
+                    (
+                        game_url.clone(),
+                        scrape_game(&game_url).await.inspect_err(|e| {
+                            error!("failed to scrape {game_url}: {e}");
+                        }),
+                    )
+                }
+            })
+            .buffer_unordered(workers)
+            .collect()
+            .await;
 
     let mut saved_files = Vec::new();
     let mut missing_files = Vec::new();
     let mut scrape_errors = Vec::new();
 
-    let total = scrape_results.iter().filter_map(|r| r.1.as_ref().ok())
-        .map(|GameInfo {fuckingfast_links, .. }| fuckingfast_links.len())
+    let total = scrape_results
+        .iter()
+        .filter_map(|r| r.1.as_ref().ok())
+        .map(
+            |GameInfo {
+                 fuckingfast_links, ..
+             }| fuckingfast_links.len(),
+        )
         .sum::<usize>();
     sender.post(MainMessage::SetMaxCap(total));
 
     for (game_url, result) in scrape_results {
-        let GameInfo { path_part, fuckingfast_links } = match result {
+        let GameInfo {
+            path_part,
+            fuckingfast_links,
+        } = match result {
             Ok(r) => r,
             Err(e) => {
                 let error = format!("{game_url}: {e}");
                 scrape_errors.push(error);
-                continue
-            },
+                continue;
+            }
         };
 
         let output_file = format!("{path_part}.txt");
@@ -83,34 +104,47 @@ pub async fn export_ddl(game_urls: impl Iterator<Item = impl Into<String>>, work
             }
         }
 
+
+        write_aria2_input(&results, &output_file).await;
+
         if selective {
-            warn!("unimplemented: selective download")
+            warn!("unimplemented: selective download");
+            sender.post(MainMessage::CreateSelection(results, path_part));
         }
 
-        #[rustfmt::skip] 
-        let output_string: String = results.iter()
-            .sorted_by(|&a, &b|{
-                a.filename.cmp(&b.filename)
-            })
-            .map(
-                |DDL {
-                    filename,
-                    direct_link,
-                }| {
-                    format!(
-"{direct_link}
-    out={filename}
-    continue=true
-"
-                    )
-                },
-            ).collect();
-
-        let _ = compio::fs::write(&output_file, output_string.into_bytes()).await;
         saved_files.push(output_file);
     }
 
-    Ok(
-        ExtractionInfo { saved_files, missing_files,scrape_errors }
-    )
+    Ok(ExtractionInfo {
+        saved_files,
+        missing_files,
+        scrape_errors,
+    })
+}
+
+pub async fn write_aria2_input(
+    ddls: impl IntoIterator<Item = &DDL>,
+    output_file: impl AsRef<Path>,
+) {
+    #[rustfmt::skip] 
+    let output_string: String = ddls
+        .into_iter()
+        .sorted_by(|&a, &b|{
+            a.filename.cmp(&b.filename)
+        })
+        .map(
+            |DDL {
+                filename,
+                direct_link,
+            }| {
+                format!(
+"{direct_link}
+out={filename}
+continue=true
+"
+                )
+            },
+        ).collect();
+
+    let _ = compio::fs::write(&output_file, output_string.into_bytes()).await;
 }

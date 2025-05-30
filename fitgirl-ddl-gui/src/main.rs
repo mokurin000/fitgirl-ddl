@@ -2,11 +2,12 @@
 
 use std::{error::Error, fmt::Write};
 
-use fitgirl_ddl_lib::init_nyquest;
+use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
 use spdlog::{Level, debug, info};
 
 mod utils;
 use utils::{ExtractionInfo, export_ddl};
+mod select_box;
 
 use compio::runtime::spawn;
 use winio::{
@@ -14,6 +15,8 @@ use winio::{
     MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
     Window, WindowEvent,
 };
+
+use crate::select_box::{SelectWindow, collect_groups};
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     nyquest_preset::register();
@@ -33,6 +36,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 #[allow(unused)]
 struct MainModel {
     window: Child<Window>,
+    selective_boxes: Vec<Child<SelectWindow>>,
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
@@ -49,6 +53,7 @@ enum MainMessage {
     DownloadDone,
     IncreaseCount,
     SetMaxCap(usize),
+    CreateSelection(Vec<DDL>, String),
 }
 
 impl Component for MainModel {
@@ -59,7 +64,6 @@ impl Component for MainModel {
 
     fn init(_: Self::Init, _root: &Self::Root, _sender: &ComponentSender<Self>) -> Self {
         let mut window = Child::<Window>::init((), &());
-
         window.set_text("fitgirl-ddl");
         window.set_size(Size::new(800.0, 100.0));
 
@@ -85,6 +89,7 @@ impl Component for MainModel {
             selective_download,
             downloading: false,
             position: 0,
+            selective_boxes: vec![],
         }
     }
 
@@ -105,8 +110,9 @@ impl Component for MainModel {
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
-        {
-            self.window.update().await;
+        self.window.update().await;
+        for sbox in &mut self.selective_boxes {
+            sbox.update().await;
         }
 
         match message {
@@ -219,11 +225,21 @@ impl Component for MainModel {
 
                 false
             }
+            MainMessage::CreateSelection(ddls, game_name) => {
+                self.selective_boxes.push(Child::<SelectWindow>::init(
+                    (collect_groups(ddls), game_name),
+                    &(),
+                ));
+                false
+            }
         }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
         self.window.render();
+        for sbox in &mut self.selective_boxes {
+            sbox.render();
+        }
 
         let mut layout = StackPanel::new(winio::Orient::Horizontal);
         layout.push(&mut self.url_edit).grow(true).finish();

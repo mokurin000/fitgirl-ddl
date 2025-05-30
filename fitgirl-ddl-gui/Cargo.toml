@@ -16,6 +16,7 @@ itertools = { workspace = true }
 spdlog-rs = { workspace = true }
 
 winio = { git = "https://github.com/compio-rs/winio", default-features = false }
+ahash = "0.8.12"
 
 [features]
 default = ["gtk"]
