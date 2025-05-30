@@ -236,7 +236,7 @@ impl Component for MainModel {
                     let sender = sender.clone();
                     compio::runtime::spawn(async move {
                         if let Some(swindow) = ptr_window.as_mut() {
-                            swindow.start(&sender, |_| None).await;
+                            swindow.start(&sender, |_| Some(MainMessage::Redraw)).await;
                         }
                     })
                     .detach();

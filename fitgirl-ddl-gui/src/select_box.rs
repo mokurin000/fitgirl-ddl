@@ -91,7 +91,10 @@ impl Component for SelectWindow {
             _ => None,
         });
         let fut_submit = self.submit.start(sender, |e| match e {
-            winio::ButtonEvent::Click => Some(SelectMessage::SaveFile),
+            winio::ButtonEvent::Click => {
+                sender.output(());
+                Some(SelectMessage::SaveFile)
+            }
             _ => None,
         });
         futures_util::join!(fut_window, fut_submit);
