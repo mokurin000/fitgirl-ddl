@@ -108,7 +108,6 @@ pub async fn export_ddl(
         write_aria2_input(&results, &output_file).await;
 
         if selective {
-            warn!("unimplemented: selective download");
             sender.post(MainMessage::CreateSelection(results, path_part));
         }
 
@@ -147,4 +146,5 @@ continue=true
         ).collect();
 
     let _ = compio::fs::write(&output_file, output_string.into_bytes()).await;
+    info!("saved: {:?}", output_file.as_ref());
 }

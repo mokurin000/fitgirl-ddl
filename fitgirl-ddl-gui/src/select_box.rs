@@ -1,12 +1,16 @@
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
-use winio::{CheckBox, Child, Component, Layoutable, Size, StackPanel, Window};
+use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Window};
+
+use crate::utils::write_aria2_input;
 
 #[derive(Debug)]
 pub struct SelectWindow {
     pub window: Child<Window>,
     pub checkbox: Vec<Child<CheckBox>>,
+    pub submit: Child<Button>,
 
+    pub game_name: String,
     pub groups: AHashMap<String, Vec<DDL>>,
 }
 
@@ -14,6 +18,7 @@ pub struct SelectWindow {
 pub enum SelectMessage {
     CloseWindow,
     Refresh,
+    SaveFile,
 }
 
 pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
@@ -49,36 +54,47 @@ impl Component for SelectWindow {
         _sender: &winio::ComponentSender<Self>,
     ) -> Self {
         let mut window = Child::<Window>::init((), &root);
-        window.set_text(game_name);
+        window.set_text(&game_name);
         window.set_size(Size::new(500., 500.));
 
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys() {
             let mut cbox = Child::<CheckBox>::init((), &window);
             cbox.set_text(group_name);
-            for keyword in ["optional", "selective"] {
-                if group_name.contains(keyword) {
-                    cbox.set_checked(true);
-                    break;
-                }
+
+            if ["optional", "selective"]
+                .iter()
+                .all(|keyword| !group_name.contains(keyword))
+            {
+                cbox.set_checked(true);
             }
+
             checkbox.push(cbox);
         }
 
+        let mut submit = Child::<Button>::init((), &window);
+        submit.set_text("Confirm");
+
         Self {
-            groups,
             window,
             checkbox,
+            submit,
+            groups,
+            game_name,
         }
     }
 
     async fn start(&mut self, sender: &winio::ComponentSender<Self>) {
-        let fut = self.window.start(sender, |e| match e {
+        let fut_window = self.window.start(sender, |e| match e {
             winio::WindowEvent::Close => Some(SelectMessage::CloseWindow),
             winio::WindowEvent::Resize => Some(SelectMessage::Refresh),
             _ => None,
         });
-        futures_util::join!(fut);
+        let fut_submit = self.submit.start(sender, |e| match e {
+            winio::ButtonEvent::Click => Some(SelectMessage::SaveFile),
+            _ => None,
+        });
+        futures_util::join!(fut_window, fut_submit);
     }
 
     async fn update(
@@ -92,16 +108,35 @@ impl Component for SelectWindow {
                 false
             }
             SelectMessage::Refresh => true,
+            SelectMessage::SaveFile => {
+                let ddls: Vec<_> = self
+                    .checkbox
+                    .iter()
+                    .filter(|c| c.is_checked())
+                    .map(|c| c.text())
+                    .filter_map(|t| self.groups.get(&t))
+                    .flatten()
+                    .collect();
+
+                write_aria2_input(ddls, format!("{}_selected.txt", self.game_name)).await;
+                false
+            }
         }
     }
 
     fn render(&mut self, _sender: &winio::ComponentSender<Self>) {
         self.window.render();
+
+        let mut layout_out = StackPanel::new(winio::Orient::Vertical);
         let mut layout = StackPanel::new(winio::Orient::Vertical);
         for cbox in &mut self.checkbox {
             layout.push(cbox).finish();
         }
 
-        layout.set_size(self.window.client_size());
+        layout_out.push(&mut layout).grow(true).finish();
+        layout_out.push(&mut self.submit).grow(false).finish();
+
+        self.window.set_size(layout_out.preferred_size());
+        layout_out.set_size(self.window.client_size());
     }
 }

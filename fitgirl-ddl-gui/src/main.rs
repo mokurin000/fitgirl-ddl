@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 #[allow(unused)]
 struct MainModel {
     window: Child<Window>,
-    selective_boxes: Vec<Child<SelectWindow>>,
+    selective_boxes: Vec<&'static mut Child<SelectWindow>>,
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
@@ -226,10 +226,23 @@ impl Component for MainModel {
                 false
             }
             MainMessage::CreateSelection(ddls, game_name) => {
-                self.selective_boxes.push(Child::<SelectWindow>::init(
-                    (collect_groups(ddls), game_name),
-                    &(),
-                ));
+                let swindow = Child::<SelectWindow>::init((collect_groups(ddls), game_name), &());
+
+                // leak here to avoid lifetime issue
+                let swindow = Box::leak(Box::new(swindow));
+                let ptr_window = std::ptr::from_mut(swindow);
+
+                unsafe {
+                    let sender = sender.clone();
+                    compio::runtime::spawn(async move {
+                        if let Some(swindow) = ptr_window.as_mut() {
+                            swindow.start(&sender, |_| None).await;
+                        }
+                    })
+                    .detach();
+                }
+
+                self.selective_boxes.push(swindow);
                 false
             }
         }
