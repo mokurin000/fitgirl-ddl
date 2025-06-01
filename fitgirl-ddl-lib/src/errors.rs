@@ -23,7 +23,7 @@ impl From<SelectorErrorKind<'_>> for ScrapeError {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum ExtractError {
     #[error("filename was not found")]
     FilenameMissing,
