@@ -33,7 +33,12 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         return Err(ExtractError::FileNotFound(filename));
     }
 
+    #[cfg(feature = "compio")]
     let direct_link = compio::runtime::spawn_blocking(move || parse_html(resp))
+        .await
+        .map_err(|_| ExtractError::JoinError)??;
+    #[cfg(feature = "tokio")]
+    let direct_link = tokio::task::spawn_blocking(move || parse_html(resp))
         .await
         .map_err(|_| ExtractError::JoinError)??;
 

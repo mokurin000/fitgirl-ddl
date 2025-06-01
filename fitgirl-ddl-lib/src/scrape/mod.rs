@@ -30,7 +30,12 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .text()
         .await?;
 
+    #[cfg(feature = "compio")]
     let fuckingfast_links = compio::runtime::spawn_blocking(move || parse_html(resp))
+        .await
+        .map_err(|_| ScrapeError::JoinError)??;
+    #[cfg(feature = "tokio")]
+    let fuckingfast_links = tokio::task::spawn_blocking(move || parse_html(resp))
         .await
         .map_err(|_| ScrapeError::JoinError)??;
 
