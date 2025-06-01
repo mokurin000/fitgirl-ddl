@@ -26,9 +26,11 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .get()
         .unwrap()
         .request(nyquest::Request::get(url.to_string()))
-        .await?
+        .await
+        .map_err(|e| ScrapeError::RequestError(e.to_string()))?
         .text()
-        .await?;
+        .await
+        .map_err(|e| ScrapeError::RequestError(e.to_string()))?;
 
     #[cfg(feature = "compio")]
     let fuckingfast_links = compio::runtime::spawn_blocking(move || parse_html(resp))

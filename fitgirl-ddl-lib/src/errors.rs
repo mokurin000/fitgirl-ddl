@@ -1,7 +1,7 @@
 use scraper::error::SelectorErrorKind;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum ScrapeError {
     #[error("fuckingfast.co source was missing")]
     FuckingFastSourceMissing,
@@ -10,7 +10,7 @@ pub enum ScrapeError {
     #[error("expected link to single game description")]
     UnexpectedURL,
     #[error("request: {0}")]
-    RequestError(#[from] nyquest::Error),
+    RequestError(String),
     #[error("join error")]
     JoinError,
     #[error("invalid css selector")]
