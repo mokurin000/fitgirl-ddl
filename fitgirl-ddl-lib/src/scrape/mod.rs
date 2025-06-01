@@ -3,6 +3,7 @@ use url::Url;
 
 use crate::{NYQUEST_CLIENT, errors::ScrapeError};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct GameInfo {
     pub path_part: String,

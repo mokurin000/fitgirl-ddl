@@ -2,6 +2,7 @@ use scraper::Selector;
 
 use crate::{NYQUEST_CLIENT, errors::ExtractError};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct DDL {
     pub filename: String,

@@ -13,8 +13,13 @@ compio = { workspace = true, optional = true }
 tokio = { version = "1", default-features = false, features = [
     "rt",
 ], optional = true }
+serde = { version = "1.0.219", default-features = false, optional = true, features = [
+    "derive",
+    "std",
+] }
 
 [features]
 default = ["compio"]
 compio = ["dep:compio"]
 tokio = ["dep:tokio"]
+serde = ["dep:serde"]
