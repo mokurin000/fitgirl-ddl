@@ -55,7 +55,7 @@ struct MainModel {
     position: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MainMessage {
     Close,
     Redraw,

@@ -16,14 +16,14 @@ pub struct SelectWindow {
     pub groups: AHashMap<String, Vec<DDL>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SelectMessage {
     CloseWindow,
     Refresh,
     SaveFile,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SelectEvent {
     Update,
     Close,

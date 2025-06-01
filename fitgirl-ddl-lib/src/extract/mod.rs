@@ -2,7 +2,7 @@ use scraper::Selector;
 
 use crate::{NYQUEST_CLIENT, errors::ExtractError};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct DDL {
     pub filename: String,
     pub direct_link: String,

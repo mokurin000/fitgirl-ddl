@@ -3,7 +3,7 @@ use url::Url;
 
 use crate::{NYQUEST_CLIENT, errors::ScrapeError};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GameInfo {
     pub path_part: String,
     pub fuckingfast_links: Vec<String>,
