@@ -30,7 +30,7 @@ pub enum ExtractError {
     #[error("direct download link was not found")]
     DDLMissing,
     #[error("request: {0}")]
-    RequestError(#[from] nyquest::Error),
+    RequestError(String),
     #[error("invalid css selector")]
     InvalidCSSSelector,
     #[error("join error")]

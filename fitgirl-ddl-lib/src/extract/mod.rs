@@ -21,9 +21,11 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         .get()
         .unwrap()
         .request(nyquest::Request::get(url.to_string()))
-        .await?
+        .await
+        .map_err(|e| ExtractError::RequestError(e.to_string()))?
         .text()
-        .await?;
+        .await
+        .map_err(|e| ExtractError::RequestError(e.to_string()))?;
 
     if resp.contains("rate limit") {
         return Err(ExtractError::RateLimited);
