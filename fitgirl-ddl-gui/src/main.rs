@@ -117,7 +117,7 @@ impl Component for MainModel {
         });
         let fut_cbox = self.selective_download.start(sender, |_| None);
         let fut_swindows = self.selective_boxes.values_mut().map(|s| {
-            s.start(&sender, |e| match e {
+            s.start(sender, |e| match e {
                 select_box::SelectEvent::Update => Some(MainMessage::Redraw),
                 select_box::SelectEvent::Close(window_id) => {
                     Some(MainMessage::CloseSelective(window_id))
@@ -142,11 +142,11 @@ impl Component for MainModel {
         )
         .await
         .into_iter()
-        .fold(false, |a, b| a || b);
+        .any(|b| b);
 
         (match message {
             MainMessage::Close => {
-                match MessageBox::new()
+                if MessageBox::new()
                     .title(env!("CARGO_PKG_NAME"))
                     .message("Confirm Exit")
                     .instruction("Are you sure to exit fitgirl-ddl?")
@@ -154,11 +154,9 @@ impl Component for MainModel {
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
                     .show(Some(self.window.as_window()))
                     .await
+                    == MessageBoxResponse::Yes
                 {
-                    MessageBoxResponse::Yes => {
-                        sender.output(());
-                    }
-                    _ => {}
+                    sender.output(());
                 }
                 false
             }
@@ -184,7 +182,7 @@ impl Component for MainModel {
                 self.progress.set_range(0, 0);
                 let selective = self.selective_download.is_checked();
 
-                _ = spawn(async move {
+                spawn(async move {
                     let urls = text.split([' ', '\n', '\t']).filter(|s| !s.is_empty());
                     let export = export_ddl(urls, 2, &sender, selective);
 

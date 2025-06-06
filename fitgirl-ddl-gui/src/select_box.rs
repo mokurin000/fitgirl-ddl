@@ -67,7 +67,7 @@ impl Component for SelectWindow {
         root: &Self::Root,
         _sender: &winio::ComponentSender<Self>,
     ) -> Self {
-        let mut window = Child::<Window>::init((), &root);
+        let mut window = Child::<Window>::init((), root);
         window.set_text(&game_name);
         window.set_size(Size::new(500., 500.));
 
