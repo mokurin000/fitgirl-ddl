@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{error::Error, fmt::Write, sync::Arc};
+use std::{collections::BTreeMap, error::Error, fmt::Write, sync::Arc};
 
 use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
 use spdlog::{Level, debug, info, sink::FileSink};
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 #[allow(unused)]
 struct MainModel {
     window: Child<Window>,
-    selective_boxes: Vec<&'static mut Child<SelectWindow>>,
+    selective_boxes: BTreeMap<usize, Child<SelectWindow>>,
     button: Child<Button>,
     url_edit: Child<Edit>,
     progress: Child<Progress>,
@@ -64,6 +64,7 @@ enum MainMessage {
     IncreaseCount,
     SetMaxCap(usize),
     CreateSelection(Vec<DDL>, String),
+    CloseSelective(usize),
 }
 
 impl Component for MainModel {
@@ -99,7 +100,7 @@ impl Component for MainModel {
             selective_download,
             downloading: false,
             position: 0,
-            selective_boxes: vec![],
+            selective_boxes: BTreeMap::default(),
         }
     }
 
@@ -115,13 +116,26 @@ impl Component for MainModel {
             _ => None,
         });
         let fut_cbox = self.selective_download.start(sender, |_| None);
+        let fut_swindows = self.selective_boxes.values_mut().map(|s| {
+            s.start(&sender, |e| match e {
+                select_box::SelectEvent::Update => Some(MainMessage::Redraw),
+                select_box::SelectEvent::Close(window_id) => {
+                    Some(MainMessage::CloseSelective(window_id))
+                }
+            })
+        });
 
-        futures_util::join!(fut_window, fut_button, fut_cbox);
+        futures_util::join!(
+            fut_window,
+            fut_button,
+            fut_cbox,
+            futures_util::future::join_all(fut_swindows)
+        );
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
         self.window.update().await;
-        for sbox in &mut self.selective_boxes {
+        for sbox in self.selective_boxes.values_mut() {
             sbox.update().await;
         }
 
@@ -233,27 +247,13 @@ impl Component for MainModel {
             }
             MainMessage::CreateSelection(ddls, game_name) => {
                 let swindow = Child::<SelectWindow>::init((collect_groups(ddls), game_name), &());
+                let window_id = swindow.window_id;
 
-                // leak here to avoid lifetime issue
-                let swindow = Box::leak(Box::new(swindow));
-                let ptr_window = std::ptr::from_mut(swindow);
-
-                unsafe {
-                    let sender = sender.clone();
-                    compio::runtime::spawn(async move {
-                        if let Some(swindow) = ptr_window.as_mut() {
-                            swindow
-                                .start(&sender, |e| match e {
-                                    select_box::SelectEvent::Update => Some(MainMessage::Redraw),
-                                    select_box::SelectEvent::Close => None,
-                                })
-                                .await;
-                        }
-                    })
-                    .detach();
-                }
-
-                self.selective_boxes.push(swindow);
+                self.selective_boxes.insert(window_id, swindow);
+                false
+            }
+            MainMessage::CloseSelective(id) => {
+                self.selective_boxes.remove_entry(&id);
                 false
             }
         }
@@ -261,7 +261,7 @@ impl Component for MainModel {
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
         self.window.render();
-        for sbox in &mut self.selective_boxes {
+        for sbox in self.selective_boxes.values_mut() {
             sbox.render();
         }
 

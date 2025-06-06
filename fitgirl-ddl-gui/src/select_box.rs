@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicUsize;
+
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use futures_util::StreamExt as _;
@@ -8,6 +10,8 @@ use crate::utils::write_aria2_input;
 
 #[derive(Debug)]
 pub struct SelectWindow {
+    pub window_id: usize,
+
     pub window: Child<Window>,
     pub checkbox: Vec<Child<CheckBox>>,
     pub submit: Child<Button>,
@@ -26,7 +30,7 @@ pub enum SelectMessage {
 #[derive(Debug, Clone)]
 pub enum SelectEvent {
     Update,
-    Close,
+    Close(usize),
 }
 
 pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
@@ -49,6 +53,8 @@ pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, V
 
     groups
 }
+
+static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
 impl Component for SelectWindow {
     type Init = (AHashMap<String, Vec<DDL>>, String);
@@ -84,6 +90,7 @@ impl Component for SelectWindow {
         submit.set_text("Confirm");
 
         Self {
+            window_id: SWINDOW_ID.fetch_add(1, std::sync::atomic::Ordering::AcqRel),
             window,
             checkbox,
             submit,
@@ -122,7 +129,7 @@ impl Component for SelectWindow {
     ) -> bool {
         match message {
             SelectMessage::CloseWindow => {
-                sender.output(SelectEvent::Close);
+                sender.output(SelectEvent::Close(self.window_id));
                 false
             }
             SelectMessage::Refresh => {
