@@ -135,11 +135,16 @@ impl Component for MainModel {
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
         self.window.update().await;
-        for sbox in self.selective_boxes.values_mut() {
-            sbox.update().await;
-        }
+        let sub_update = futures_util::future::join_all(
+            self.selective_boxes
+                .values_mut()
+                .map(async |sbox| sbox.update().await),
+        )
+        .await
+        .into_iter()
+        .fold(false, |a, b| a || b);
 
-        match message {
+        (match message {
             MainMessage::Close => {
                 match MessageBox::new()
                     .title(env!("CARGO_PKG_NAME"))
@@ -256,7 +261,7 @@ impl Component for MainModel {
                 self.selective_boxes.remove_entry(&id);
                 false
             }
-        }
+        } || sub_update)
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
