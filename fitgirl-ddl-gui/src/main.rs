@@ -11,8 +11,8 @@ mod select_box;
 
 use compio::runtime::spawn;
 use winio::{
-    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Edit, Layoutable,
-    MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
+    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Layoutable, MessageBox,
+    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel, TextBox,
     Visible, Window, WindowEvent,
 };
 
@@ -48,7 +48,7 @@ struct MainModel {
     window: Child<Window>,
     selective_boxes: BTreeMap<usize, Child<SelectWindow>>,
     button: Child<Button>,
-    url_edit: Child<Edit>,
+    url_edit: Child<TextBox>,
     progress: Child<Progress>,
     selective_download: Child<CheckBox>,
     downloading: bool,
@@ -78,7 +78,7 @@ impl Component for MainModel {
         window.set_text("fitgirl-ddl");
         window.set_size(Size::new(800.0, 100.0));
 
-        let url_edit = Child::<Edit>::init((), &window);
+        let url_edit = Child::<TextBox>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
         button.set_text(" Submit ");
         let mut progress = Child::<Progress>::init((), &window);

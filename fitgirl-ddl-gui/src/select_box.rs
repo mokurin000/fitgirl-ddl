@@ -2,7 +2,6 @@ use std::sync::atomic::AtomicUsize;
 
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
-use futures_util::StreamExt as _;
 use itertools::Itertools;
 use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Visible, Window};
 
@@ -25,7 +24,6 @@ pub enum SelectMessage {
     CloseWindow,
     Refresh,
     SaveFile,
-    Toggle(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -66,7 +64,7 @@ impl Component for SelectWindow {
     fn init(
         (groups, game_name): Self::Init,
         root: &Self::Root,
-        _sender: &winio::ComponentSender<Self>,
+        sender: &winio::ComponentSender<Self>,
     ) -> Self {
         let mut window = Child::<Window>::init((), root);
         window.set_text(&game_name);
@@ -91,6 +89,9 @@ impl Component for SelectWindow {
         submit.set_text("Confirm");
 
         window.set_visible(true);
+
+        sender.post(SelectMessage::Refresh);
+
         Self {
             window_id: SWINDOW_ID.fetch_add(1, std::sync::atomic::Ordering::AcqRel),
             window,
@@ -123,21 +124,19 @@ impl Component for SelectWindow {
             },
             || SelectMessage::Refresh,
         );
-        let fut_cboxes = futures_util::stream::iter(self.checkbox.iter_mut().enumerate())
-            .map(async |(id, c)| {
-                c.start(
-                    sender,
-                    |c| match c {
-                        winio::CheckBoxEvent::Click => Some(SelectMessage::Toggle(id)),
-                        _ => None,
-                    },
-                    || SelectMessage::Refresh,
-                )
-                .await;
+        let fut_cboxes = self
+            .checkbox
+            .iter_mut()
+            .map(async |c| {
+                c.start(sender, |_| None, || SelectMessage::Refresh).await;
             })
-            .count();
+            .collect::<Vec<_>>();
 
-        futures_util::join!(fut_window, fut_submit, fut_cboxes);
+        futures_util::join!(
+            fut_window,
+            fut_submit,
+            futures_util::future::join_all(fut_cboxes)
+        );
     }
 
     async fn update(
@@ -166,12 +165,6 @@ impl Component for SelectWindow {
 
                 write_aria2_input(ddls, format!("{}_selected.txt", self.game_name)).await;
                 false
-            }
-            SelectMessage::Toggle(id) => {
-                let cbox = &mut self.checkbox[id];
-                let state = !cbox.is_checked();
-                cbox.set_checked(state);
-                true
             }
         }
     }

@@ -62,15 +62,11 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
         })
         .collect::<Vec<_>>();
 
-    let single_tag;
-
-    match tags.len() {
+    let single_tag = match tags.len() {
         0 => return Err(ScrapeError::FuckingFastSourceMissing)?,
-        1 => {
-            single_tag = tags[0];
-        }
+        1 => tags[0],
         _ => return Err(ScrapeError::UnexpectedURL)?,
-    }
+    };
 
     let fuckingfast_links_selector = Selector::parse(
         "div.entry-content > ul > li > div.su-spoiler > div.su-spoiler-content > a",
