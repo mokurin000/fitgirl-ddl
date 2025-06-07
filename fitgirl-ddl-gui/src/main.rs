@@ -11,9 +11,9 @@ mod select_box;
 
 use compio::runtime::spawn;
 use winio::{
-    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Layoutable, MessageBox,
-    MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel, TextBox,
-    Visible, Window, WindowEvent,
+    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Layoutable, Margin,
+    MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
+    TextBox, Visible, Window, WindowEvent,
 };
 
 use crate::select_box::{SelectWindow, collect_groups};
@@ -76,7 +76,7 @@ impl Component for MainModel {
     fn init(_: Self::Init, _root: &Self::Root, _sender: &ComponentSender<Self>) -> Self {
         let mut window = Child::<Window>::init((), &());
         window.set_text("fitgirl-ddl");
-        window.set_size(Size::new(800.0, 100.0));
+        window.set_size(Size::new(800.0, 130.0));
 
         let url_edit = Child::<TextBox>::init((), &window);
         let mut button = Child::<Button>::init((), &window);
@@ -295,9 +295,19 @@ impl Component for MainModel {
             .finish();
 
         let mut layout_final = StackPanel::new(winio::Orient::Vertical);
-        layout_final.push(&mut layout).grow(true).finish();
-        layout_final.push(&mut layout2).finish();
-        layout_final.push(&mut self.progress).finish();
+        layout_final
+            .push(&mut layout)
+            .grow(true)
+            .margin(Margin::new(5., 5., 5., 5.))
+            .finish();
+        layout_final
+            .push(&mut layout2)
+            .margin(Margin::new(5., 5., 5., 5.))
+            .finish();
+        layout_final
+            .push(&mut self.progress)
+            .margin(Margin::new(5., 5., 5., 5.))
+            .finish();
         layout_final.set_size(self.window.client_size());
     }
 }

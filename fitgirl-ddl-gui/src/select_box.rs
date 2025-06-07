@@ -3,7 +3,9 @@ use std::sync::atomic::AtomicUsize;
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
-use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Visible, Window};
+use winio::{
+    Button, CheckBox, Child, Component, Layoutable, Margin, Size, StackPanel, Visible, Window,
+};
 
 use crate::utils::write_aria2_input;
 
@@ -175,11 +177,22 @@ impl Component for SelectWindow {
         let mut layout_out = StackPanel::new(winio::Orient::Vertical);
         let mut layout = StackPanel::new(winio::Orient::Vertical);
         for cbox in &mut self.checkbox {
-            layout.push(cbox).finish();
+            layout
+                .push(cbox)
+                .margin(Margin::new(5., 5., 5., 5.))
+                .finish();
         }
 
-        layout_out.push(&mut layout).grow(true).finish();
-        layout_out.push(&mut self.submit).grow(false).finish();
+        layout_out
+            .push(&mut layout)
+            .grow(true)
+            .margin(Margin::new(5., 5., 5., 5.))
+            .finish();
+        layout_out
+            .push(&mut self.submit)
+            .grow(false)
+            .margin(Margin::new(5., 5., 5., 5.))
+            .finish();
 
         layout_out.set_size(self.window.client_size());
     }
