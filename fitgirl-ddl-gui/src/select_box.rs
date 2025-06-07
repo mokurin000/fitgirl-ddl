@@ -4,7 +4,7 @@ use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use futures_util::StreamExt as _;
 use itertools::Itertools;
-use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Window};
+use winio::{Button, CheckBox, Child, Component, Layoutable, Size, StackPanel, Visible, Window};
 
 use crate::utils::write_aria2_input;
 
@@ -25,6 +25,7 @@ pub enum SelectMessage {
     CloseWindow,
     Refresh,
     SaveFile,
+    Toggle(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +90,7 @@ impl Component for SelectWindow {
         let mut submit = Child::<Button>::init((), &window);
         submit.set_text("Confirm");
 
+        window.set_visible(true);
         Self {
             window_id: SWINDOW_ID.fetch_add(1, std::sync::atomic::Ordering::AcqRel),
             window,
@@ -100,22 +102,38 @@ impl Component for SelectWindow {
     }
 
     async fn start(&mut self, sender: &winio::ComponentSender<Self>) {
-        let fut_window = self.window.start(sender, |e| match e {
-            winio::WindowEvent::Close => Some(SelectMessage::CloseWindow),
-            winio::WindowEvent::Resize => Some(SelectMessage::Refresh),
-            winio::WindowEvent::Move => Some(SelectMessage::Refresh),
-            _ => None,
-        });
-        let fut_submit = self.submit.start(sender, |e| match e {
-            winio::ButtonEvent::Click => {
-                sender.output(SelectEvent::Update);
-                Some(SelectMessage::SaveFile)
-            }
-            _ => None,
-        });
-        let fut_cboxes = futures_util::stream::iter(&mut self.checkbox)
-            .map(async |c| {
-                c.start(sender, |_| None).await;
+        let fut_window = self.window.start(
+            sender,
+            |e| match e {
+                winio::WindowEvent::Close => Some(SelectMessage::CloseWindow),
+                winio::WindowEvent::Resize => Some(SelectMessage::Refresh),
+                winio::WindowEvent::Move => Some(SelectMessage::Refresh),
+                _ => None,
+            },
+            || SelectMessage::Refresh,
+        );
+        let fut_submit = self.submit.start(
+            sender,
+            |e| match e {
+                winio::ButtonEvent::Click => {
+                    sender.output(SelectEvent::Update);
+                    Some(SelectMessage::SaveFile)
+                }
+                _ => None,
+            },
+            || SelectMessage::Refresh,
+        );
+        let fut_cboxes = futures_util::stream::iter(self.checkbox.iter_mut().enumerate())
+            .map(async |(id, c)| {
+                c.start(
+                    sender,
+                    |c| match c {
+                        winio::CheckBoxEvent::Click => Some(SelectMessage::Toggle(id)),
+                        _ => None,
+                    },
+                    || SelectMessage::Refresh,
+                )
+                .await;
             })
             .count();
 
@@ -148,6 +166,12 @@ impl Component for SelectWindow {
 
                 write_aria2_input(ddls, format!("{}_selected.txt", self.game_name)).await;
                 false
+            }
+            SelectMessage::Toggle(id) => {
+                let cbox = &mut self.checkbox[id];
+                let state = !cbox.is_checked();
+                cbox.set_checked(state);
+                true
             }
         }
     }

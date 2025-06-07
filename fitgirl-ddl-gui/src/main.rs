@@ -13,7 +13,7 @@ use compio::runtime::spawn;
 use winio::{
     App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Edit, Layoutable,
     MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
-    Window, WindowEvent,
+    Visible, Window, WindowEvent,
 };
 
 use crate::select_box::{SelectWindow, collect_groups};
@@ -92,6 +92,8 @@ impl Component for MainModel {
         })
         .detach();
 
+        window.set_visible(true);
+
         Self {
             window,
             url_edit,
@@ -106,23 +108,37 @@ impl Component for MainModel {
 
     async fn start(&mut self, sender: &ComponentSender<Self>) {
         let window = &mut self.window;
-        let fut_window = window.start(sender, |e| match e {
-            WindowEvent::Close => Some(MainMessage::Close),
-            WindowEvent::Resize => Some(MainMessage::Redraw),
-            _ => None,
-        });
-        let fut_button = self.button.start(sender, |e| match e {
-            winio::ButtonEvent::Click => Some(MainMessage::Download),
-            _ => None,
-        });
-        let fut_cbox = self.selective_download.start(sender, |_| None);
+        let fut_window = window.start(
+            sender,
+            |e| match e {
+                WindowEvent::Close => Some(MainMessage::Close),
+                WindowEvent::Resize => Some(MainMessage::Redraw),
+                _ => None,
+            },
+            || MainMessage::Redraw,
+        );
+        let fut_button = self.button.start(
+            sender,
+            |e| match e {
+                winio::ButtonEvent::Click => Some(MainMessage::Download),
+                _ => None,
+            },
+            || MainMessage::Redraw,
+        );
+        let fut_cbox = self
+            .selective_download
+            .start(sender, |_| None, || MainMessage::Redraw);
         let fut_swindows = self.selective_boxes.values_mut().map(|s| {
-            s.start(sender, |e| match e {
-                select_box::SelectEvent::Update => Some(MainMessage::Redraw),
-                select_box::SelectEvent::Close(window_id) => {
-                    Some(MainMessage::CloseSelective(window_id))
-                }
-            })
+            s.start(
+                sender,
+                |e| match e {
+                    select_box::SelectEvent::Update => Some(MainMessage::Redraw),
+                    select_box::SelectEvent::Close(window_id) => {
+                        Some(MainMessage::CloseSelective(window_id))
+                    }
+                },
+                || MainMessage::Redraw,
+            )
         });
 
         futures_util::join!(
