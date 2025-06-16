@@ -3,7 +3,7 @@
 use std::{collections::BTreeMap, error::Error, fmt::Write, sync::Arc};
 
 use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
-use spdlog::{Level, debug, info, sink::FileSink};
+use spdlog::{Level, debug, info, sink::FileSink, warn};
 
 mod utils;
 use utils::{ExtractionInfo, export_ddl};
@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     })?;
     spdlog::set_default_logger(new_logger);
 
-    App::new().run::<MainModel>((), &());
+    App::new().run::<MainModel>(());
     Ok(())
 }
 
@@ -69,21 +69,20 @@ enum MainMessage {
 
 impl Component for MainModel {
     type Event = ();
-    type Init = ();
+    type Init<'a> = ();
     type Message = MainMessage;
-    type Root = ();
 
-    fn init(_: Self::Init, _root: &Self::Root, _sender: &ComponentSender<Self>) -> Self {
-        let mut window = Child::<Window>::init((), &());
+    fn init(_: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Self {
+        let mut window = Child::<Window>::init(());
         window.set_text("fitgirl-ddl");
         window.set_size(Size::new(800.0, 130.0));
 
-        let url_edit = Child::<TextBox>::init((), &window);
-        let mut button = Child::<Button>::init((), &window);
+        let url_edit = Child::<TextBox>::init(&window);
+        let mut button = Child::<Button>::init(&window);
         button.set_text(" Submit ");
-        let mut progress = Child::<Progress>::init((), &window);
+        let mut progress = Child::<Progress>::init(&window);
         progress.set_range(0, 1);
-        let mut selective_download = Child::<CheckBox>::init((), &window);
+        let mut selective_download = Child::<CheckBox>::init(&window);
         selective_download.set_text("Selective");
 
         spawn(async {
@@ -140,11 +139,20 @@ impl Component for MainModel {
                 || MainMessage::Redraw,
             )
         });
+        let fut_tbox = self.url_edit.start(
+            sender,
+            |event| match event {
+                winio::TextBoxEvent::Change => Some(MainMessage::Redraw),
+                _ => None,
+            },
+            || MainMessage::Redraw,
+        );
 
         futures_util::join!(
             fut_window,
             fut_button,
             fut_cbox,
+            fut_tbox,
             futures_util::future::join_all(fut_swindows)
         );
     }
@@ -185,8 +193,11 @@ impl Component for MainModel {
                     return false;
                 }
 
+                info!("start downloading!");
+
                 let text = self.url_edit.text();
                 if text.trim().is_empty() {
+                    warn!("please enter URL first!");
                     return false;
                 }
 
@@ -265,7 +276,7 @@ impl Component for MainModel {
                 false
             }
             MainMessage::CreateSelection(ddls, game_name) => {
-                let swindow = Child::<SelectWindow>::init((collect_groups(ddls), game_name), &());
+                let swindow = Child::<SelectWindow>::init((collect_groups(ddls), game_name));
                 let window_id = swindow.window_id;
 
                 self.selective_boxes.insert(window_id, swindow);

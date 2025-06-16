@@ -58,23 +58,18 @@ pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, V
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
 impl Component for SelectWindow {
-    type Init = (AHashMap<String, Vec<DDL>>, String);
-    type Root = ();
+    type Init<'a> = (AHashMap<String, Vec<DDL>>, String);
     type Message = SelectMessage;
     type Event = SelectEvent;
 
-    fn init(
-        (groups, game_name): Self::Init,
-        root: &Self::Root,
-        sender: &winio::ComponentSender<Self>,
-    ) -> Self {
-        let mut window = Child::<Window>::init((), root);
+    fn init((groups, game_name): Self::Init<'_>, sender: &winio::ComponentSender<Self>) -> Self {
+        let mut window = Child::<Window>::init(());
         window.set_text(&game_name);
         window.set_size(Size::new(500., 500.));
 
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
-            let mut cbox = Child::<CheckBox>::init((), &window);
+            let mut cbox = Child::<CheckBox>::init(&window);
             cbox.set_text(group_name);
 
             if ["optional", "selective"]
@@ -87,7 +82,7 @@ impl Component for SelectWindow {
             checkbox.push(cbox);
         }
 
-        let mut submit = Child::<Button>::init((), &window);
+        let mut submit = Child::<Button>::init(&window);
         submit.set_text("Confirm");
 
         window.set_visible(true);
