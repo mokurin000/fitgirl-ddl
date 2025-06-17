@@ -138,8 +138,8 @@ pub async fn write_aria2_input(
             }| {
                 format!(
 "{direct_link}
-out={filename}
-continue=true
+    out={filename}
+    continue=true
 "
                 )
             },

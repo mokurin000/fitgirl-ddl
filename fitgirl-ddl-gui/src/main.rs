@@ -12,8 +12,8 @@ mod select_box;
 use compio::runtime::spawn;
 use winio::{
     App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Layoutable, Margin,
-    MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
-    TextBox, Visible, Window, WindowEvent,
+    MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle,
+    Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
 };
 
 use crate::select_box::{SelectWindow, collect_groups};
@@ -217,7 +217,7 @@ impl Component for MainModel {
                     match export_result {
                         Err(e) => {
                             popup_message(
-                                Option::<Window>::None,
+                                (),
                                 format!("failed to scrape: {e}"),
                                 MessageBoxStyle::Error,
                             )
@@ -324,7 +324,7 @@ impl Component for MainModel {
 }
 
 async fn popup_message(
-    parent: Option<impl AsWindow>,
+    parent: impl Into<MaybeBorrowedWindow<'_>>,
     message: impl AsRef<str>,
     level: MessageBoxStyle,
 ) {
