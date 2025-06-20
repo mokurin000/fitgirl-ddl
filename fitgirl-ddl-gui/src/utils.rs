@@ -69,7 +69,7 @@ pub async fn export_ddl(
             }
         };
 
-        let output_file = format!("{path_part}.txt");
+        let output_file = format!("{path_part}_full.txt");
 
         info!("start extracting for {path_part}");
 

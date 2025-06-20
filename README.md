@@ -45,6 +45,8 @@ Note: To build cli version, replace `fitgirl-ddl_gui` with `fitgirl-ddl`
 
 Windows/MacOS provide native GUI toolkit, no additional dependency was needed.
 
+For Windows, you must have Windows SDK >= `10.0.26100` installed, to enable dark mode support.
+
 ```
 cargo build --release --bin fitgirl-ddl_gui
 ```

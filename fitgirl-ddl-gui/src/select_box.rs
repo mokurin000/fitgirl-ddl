@@ -4,7 +4,8 @@ use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
 use winio::{
-    Button, CheckBox, Child, Component, Layoutable, Margin, Size, StackPanel, Visible, Window,
+    Button, CheckBox, Child, Component, Enable, Layoutable, Margin, Size, StackPanel, Visible,
+    Window,
 };
 
 use crate::utils::write_aria2_input;
@@ -77,6 +78,7 @@ impl Component for SelectWindow {
                 .all(|keyword| !group_name.contains(keyword))
             {
                 cbox.set_checked(true);
+                cbox.disable();
             }
 
             checkbox.push(cbox);
@@ -160,7 +162,7 @@ impl Component for SelectWindow {
                     .flatten()
                     .collect();
 
-                write_aria2_input(ddls, format!("{}_selected.txt", self.game_name)).await;
+                write_aria2_input(ddls, format!("{}.txt", self.game_name)).await;
                 false
             }
         }

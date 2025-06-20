@@ -7,6 +7,7 @@ edition = "2024"
 name = "fitgirl-ddl_gui"
 path = "src/main.rs"
 
+
 [dependencies]
 fitgirl-ddl-lib = { workspace = true }
 nyquest-preset = { workspace = true }
@@ -15,10 +16,13 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 spdlog-rs = { workspace = true }
 
-winio = { git = "https://github.com/compio-rs/winio", default-features = false, version = "0.5.0" }
+winio = { git = "https://github.com/compio-rs/winio", default-features = false, version = "0.5.0", features = [
+] }
 ahash = "0.8.12"
 
 [features]
-default = ["gtk"]
+default = ["gtk", "dark-mode"]
 gtk = ["winio/gtk"]
 qt = ["winio/qt"]
+
+dark-mode = ["winio/windows-dark-mode"]

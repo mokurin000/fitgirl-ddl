@@ -11,7 +11,7 @@ mod select_box;
 
 use compio::runtime::spawn;
 use winio::{
-    App, AsWindow, Button, CheckBox, Child, Component, ComponentSender, Layoutable, Margin,
+    App, AsWindow, Button, Child, Component, ComponentSender, Layoutable, Margin,
     MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle,
     Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
 };
@@ -50,7 +50,6 @@ struct MainModel {
     button: Child<Button>,
     url_edit: Child<TextBox>,
     progress: Child<Progress>,
-    selective_download: Child<CheckBox>,
     downloading: bool,
     position: usize,
 }
@@ -82,8 +81,6 @@ impl Component for MainModel {
         button.set_text(" Submit ");
         let mut progress = Child::<Progress>::init(&window);
         progress.set_range(0, 1);
-        let mut selective_download = Child::<CheckBox>::init(&window);
-        selective_download.set_text("Selective");
 
         spawn(async {
             info!("init: nyquest");
@@ -98,7 +95,6 @@ impl Component for MainModel {
             url_edit,
             button,
             progress,
-            selective_download,
             downloading: false,
             position: 0,
             selective_boxes: BTreeMap::default(),
@@ -124,9 +120,6 @@ impl Component for MainModel {
             },
             || MainMessage::Redraw,
         );
-        let fut_cbox = self
-            .selective_download
-            .start(sender, |_| None, || MainMessage::Redraw);
         let fut_swindows = self.selective_boxes.values_mut().map(|s| {
             s.start(
                 sender,
@@ -151,7 +144,6 @@ impl Component for MainModel {
         futures_util::join!(
             fut_window,
             fut_button,
-            fut_cbox,
             fut_tbox,
             futures_util::future::join_all(fut_swindows)
         );
@@ -207,7 +199,7 @@ impl Component for MainModel {
 
                 // reset range
                 self.progress.set_range(0, 0);
-                let selective = self.selective_download.is_checked();
+                let selective = true;
 
                 spawn(async move {
                     let urls = text.split([' ', '\n', '\t']).filter(|s| !s.is_empty());
@@ -299,20 +291,10 @@ impl Component for MainModel {
         layout.push(&mut self.url_edit).grow(true).finish();
         layout.push(&mut self.button).finish();
 
-        let mut layout2 = StackPanel::new(winio::Orient::Horizontal);
-        layout2
-            .push(&mut self.selective_download)
-            .grow(true)
-            .finish();
-
         let mut layout_final = StackPanel::new(winio::Orient::Vertical);
         layout_final
             .push(&mut layout)
             .grow(true)
-            .margin(Margin::new(5., 5., 5., 5.))
-            .finish();
-        layout_final
-            .push(&mut layout2)
             .margin(Margin::new(5., 5., 5., 5.))
             .finish();
         layout_final
