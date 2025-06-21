@@ -13,7 +13,7 @@ use compio::runtime::spawn;
 use winio::{
     App, AsWindow, Button, Child, Component, ComponentSender, Layoutable, Margin,
     MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle,
-    Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
+    Monitor, Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
 };
 
 use crate::select_box::{SelectWindow, collect_groups};
@@ -75,6 +75,10 @@ impl Component for MainModel {
         let mut window = Child::<Window>::init(());
         window.set_text("fitgirl-ddl");
         window.set_size(Size::new(800.0, 130.0));
+
+        // centralize
+        let monitor = Monitor::all().first().unwrap().client_scaled();
+        window.set_loc(monitor.origin + monitor.size / 2. - window.size() / 2.);
 
         let url_edit = Child::<TextBox>::init(&window);
         let mut button = Child::<Button>::init(&window);
