@@ -1,5 +1,6 @@
 use std::path::{Path, };
 
+use ahash::AHashMap;
 use fitgirl_ddl_lib::{
     errors::ExtractError,
     extract::{DDL, extract_ddl},
@@ -8,9 +9,9 @@ use fitgirl_ddl_lib::{
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
 use spdlog::{error, info, warn};
-use winio::ComponentSender;
+use winio::{ComponentSender, Layoutable as _, Monitor, Window};
 
-use crate::{MainMessage, MainModel};
+use crate::ui::main_model::{MainModel, MainMessage};
 
 pub struct ExtractionInfo {
     pub saved_files: Vec<String>,
@@ -147,4 +148,31 @@ pub async fn write_aria2_input(
 
     let _ = compio::fs::write(&output_file, output_string.into_bytes()).await;
     info!("saved: {:?}", output_file.as_ref());
+}
+
+pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
+    let mut groups: AHashMap<String, Vec<DDL>> = AHashMap::new();
+
+    for DDL {
+        filename,
+        direct_link,
+    } in ddls
+    {
+        let group_name = filename
+            .split_once(".part")
+            .map(|(pre, _)| pre.to_string())
+            .unwrap_or(filename.clone());
+        groups.entry(group_name).or_default().push(DDL {
+            filename,
+            direct_link,
+        });
+    }
+
+    groups
+}
+
+pub fn centralize_window(window: &mut Window) {
+    // centralize
+    let monitor = Monitor::all().first().unwrap().client_scaled();
+    window.set_loc(monitor.origin + monitor.size / 2. - window.size() / 2.);
 }

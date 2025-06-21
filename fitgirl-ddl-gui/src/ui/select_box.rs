@@ -8,7 +8,7 @@ use winio::{
     Window,
 };
 
-use crate::utils::write_aria2_input;
+use crate::utils::{centralize_window, write_aria2_input};
 
 #[derive(Debug)]
 pub struct SelectWindow {
@@ -34,28 +34,6 @@ pub enum SelectEvent {
     Update,
     Close(usize),
 }
-
-pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
-    let mut groups: AHashMap<String, Vec<DDL>> = AHashMap::new();
-
-    for DDL {
-        filename,
-        direct_link,
-    } in ddls
-    {
-        let group_name = filename
-            .split_once(".part")
-            .map(|(pre, _)| pre.to_string())
-            .unwrap_or(filename.clone());
-        groups.entry(group_name).or_default().push(DDL {
-            filename,
-            direct_link,
-        });
-    }
-
-    groups
-}
-
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
 impl Component for SelectWindow {
@@ -67,6 +45,8 @@ impl Component for SelectWindow {
         let mut window = Child::<Window>::init(());
         window.set_text(&game_name);
         window.set_size(Size::new(500., 500.));
+
+        centralize_window(&mut window);
 
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
