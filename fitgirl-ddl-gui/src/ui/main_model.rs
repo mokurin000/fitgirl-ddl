@@ -5,9 +5,9 @@ use spdlog::{debug, info, warn};
 
 use compio::runtime::spawn;
 use winio::{
-    AsWindow, Button, Child, Component, ComponentSender, Layoutable, Margin, MaybeBorrowedWindow,
-    MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Progress, Size, StackPanel,
-    TextBox, Visible, Window, WindowEvent,
+    AsWindow, Button, Child, Component, ComponentSender, Enable, Layoutable, Margin,
+    MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle,
+    Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
 };
 
 use crate::ui::select_box::{SelectEvent, SelectWindow};
@@ -21,7 +21,6 @@ pub(crate) struct MainModel {
     button: Child<Button>,
     url_edit: Child<TextBox>,
     progress: Child<Progress>,
-    downloading: bool,
     position: usize,
 }
 
@@ -51,7 +50,7 @@ impl Component for MainModel {
 
         let url_edit = Child::<TextBox>::init(&window);
         let mut button = Child::<Button>::init(&window);
-        button.set_text(" Submit ");
+        button.set_text(" Scrape ");
         let mut progress = Child::<Progress>::init(&window);
         progress.set_range(0, 1);
 
@@ -68,7 +67,6 @@ impl Component for MainModel {
             url_edit,
             button,
             progress,
-            downloading: false,
             position: 0,
             selective_boxes: BTreeMap::default(),
         }
@@ -148,14 +146,10 @@ impl Component for MainModel {
                 false
             }
             MainMessage::DownloadDone => {
-                self.downloading = false;
+                self.button.enable();
                 false
             }
             MainMessage::Download => {
-                if self.downloading {
-                    return false;
-                }
-
                 info!("start downloading!");
 
                 let text = self.url_edit.text();
@@ -166,7 +160,7 @@ impl Component for MainModel {
 
                 let sender = sender.clone();
 
-                self.downloading = true;
+                self.button.disable();
 
                 // reset range
                 self.progress.set_range(0, 0);
