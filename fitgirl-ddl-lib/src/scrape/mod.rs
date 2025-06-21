@@ -1,7 +1,7 @@
 use scraper::Selector;
 use url::Url;
 
-use crate::{NYQUEST_CLIENT, errors::ScrapeError};
+use crate::{FITGIRL_COOKIES, NYQUEST_CLIENT, errors::ScrapeError};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
@@ -23,10 +23,15 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .ok_or(ScrapeError::UnexpectedURL)?
         .to_string();
 
+    let mut req = nyquest::Request::get(url.to_string());
+    if let Some(cookies) = FITGIRL_COOKIES.get() {
+        req = req.with_header("Cookie", cookies);
+    }
+
     let resp = NYQUEST_CLIENT
         .get()
         .unwrap()
-        .request(nyquest::Request::get(url.to_string()))
+        .request(req)
         .await
         .map_err(|e| ScrapeError::RequestError(e.to_string()))?
         .text()
