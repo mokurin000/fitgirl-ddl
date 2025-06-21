@@ -13,6 +13,7 @@ use winio::{ComponentSender, Layoutable as _, Monitor, Window};
 
 use crate::ui::main_model::{MainModel, MainMessage};
 
+#[allow(unused)]
 pub struct ExtractionInfo {
     pub saved_files: Vec<String>,
     pub missing_files: Vec<String>,

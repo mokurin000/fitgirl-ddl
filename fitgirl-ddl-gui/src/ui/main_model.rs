@@ -207,19 +207,15 @@ impl Component for MainModel {
                             .await
                         }
                         Ok(ExtractionInfo {
-                            saved_files,
                             missing_files,
                             scrape_errors,
+                            ..
                         }) => {
-                            let exported = saved_files.join("\n");
                             let missing = missing_files.join("\n");
                             let errors = scrape_errors.join("\n");
 
                             let mut message = String::new();
 
-                            if !exported.is_empty() {
-                                _ = message.write_fmt(format_args!("Exported:\n{exported}\n"));
-                            }
                             if !missing.is_empty() {
                                 _ = message.write_fmt(format_args!(
                                     "File Not Found Or Deleted:\n{missing}\n"
@@ -230,7 +226,11 @@ impl Component for MainModel {
                             }
 
                             compio::runtime::spawn(async move {
-                                popup_message((), message.trim(), MessageBoxStyle::Warning).await
+                                let message = message.trim();
+                                if !message.is_empty() {
+                                    popup_message((), message.trim(), MessageBoxStyle::Warning)
+                                        .await
+                                }
                             })
                             .detach();
                         }
