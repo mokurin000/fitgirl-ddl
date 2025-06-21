@@ -14,6 +14,8 @@ mod ui {
     pub mod select_box;
 }
 
+pub mod model;
+
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     nyquest_preset::register();
 

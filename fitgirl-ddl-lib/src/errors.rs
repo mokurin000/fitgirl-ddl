@@ -3,6 +3,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error, Clone)]
 pub enum ScrapeError {
+    #[error("IP was banned by ddos-guard!")]
+    DDoSGuarded,
     #[error("fuckingfast.co source was missing")]
     FuckingFastSourceMissing,
     #[error("ill-formed url: {0}")]

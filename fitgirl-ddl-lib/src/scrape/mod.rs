@@ -33,7 +33,13 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .unwrap()
         .request(req)
         .await
-        .map_err(|e| ScrapeError::RequestError(e.to_string()))?
+        .map_err(|e| ScrapeError::RequestError(e.to_string()))?;
+
+    if resp.status() == 403 {
+        return Err(ScrapeError::DDoSGuarded);
+    }
+
+    let document = resp
         .text()
         .await
         .map_err(|e| ScrapeError::RequestError(e.to_string()))?;
@@ -43,7 +49,7 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
     #[cfg(feature = "tokio")]
     let spawn = tokio::task::spawn_blocking;
 
-    let fuckingfast_links = spawn(move || parse_html(resp))
+    let fuckingfast_links = spawn(move || parse_html(document))
         .await
         .map_err(|_| ScrapeError::JoinError)??;
 

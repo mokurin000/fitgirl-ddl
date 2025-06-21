@@ -1,7 +1,9 @@
 use std::{collections::BTreeMap, fmt::Write};
 
+use fitgirl_ddl_lib::set_fg_cookies;
 use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
-use spdlog::{debug, info, warn};
+use itertools::Itertools;
+use spdlog::{debug, error, info, warn};
 
 use compio::runtime::spawn;
 use winio::{
@@ -10,6 +12,7 @@ use winio::{
     Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
 };
 
+use crate::model::Cookie;
 use crate::ui::select_box::{SelectEvent, SelectWindow};
 use crate::utils::{ExtractionInfo, export_ddl};
 use crate::utils::{centralize_window, collect_groups};
@@ -57,6 +60,29 @@ impl Component for MainModel {
         spawn(async {
             info!("init: nyquest");
             _ = init_nyquest().await;
+
+            let cookies = match compio::fs::read("cookies.json").await {
+                Err(e) => {
+                    error!("failed to read cookies.json: {e}");
+                    return;
+                }
+                Ok(bytes) => serde_json::from_slice::<Vec<Cookie>>(&bytes),
+            };
+
+            let cookies = match cookies {
+                Err(e) => {
+                    error!("failed to decode cookies.json: {e}");
+                    return;
+                }
+                Ok(c) => c,
+            };
+
+            let _ = set_fg_cookies(
+                cookies
+                    .iter()
+                    .map(|Cookie { name, value }| format!("{name}={value}"))
+                    .join("; "),
+            );
         })
         .detach();
 
@@ -200,11 +226,13 @@ impl Component for MainModel {
                                 ));
                             }
                             if !errors.is_empty() {
-                                _ = message.write_fmt(format_args!("Failed:\n{errors}\n"));
+                                _ = message.write_fmt(format_args!("Failed:\n{errors}"));
                             }
 
-                            let message = message.trim();
-                            info!("{message}");
+                            compio::runtime::spawn(async move {
+                                popup_message((), message.trim(), MessageBoxStyle::Warning).await
+                            })
+                            .detach();
                         }
                     }
 
