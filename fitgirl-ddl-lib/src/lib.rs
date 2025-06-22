@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use nyquest::{AsyncClient, client::BuildClientResult};
+use nyquest::AsyncClient;
 
 pub mod errors;
 pub mod extract;
@@ -10,7 +10,7 @@ pub static NYQUEST_CLIENT: OnceLock<AsyncClient> = OnceLock::new();
 pub static FITGIRL_COOKIES: OnceLock<String> = OnceLock::new();
 
 /// Initializes nyquest client.
-pub async fn init_nyquest() -> BuildClientResult<()> {
+pub async fn init_nyquest() -> nyquest::Result<()> {
     let async_client = nyquest::ClientBuilder::default()
         .user_agent(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",

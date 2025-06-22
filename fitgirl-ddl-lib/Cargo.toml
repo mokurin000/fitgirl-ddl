@@ -1,13 +1,13 @@
 [package]
 name = "fitgirl-ddl-lib"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
 scraper = { version = "0.23.1", features = ["atomic"] }
 thiserror = "2.0.12"
 url = "2.5.4"
-nyquest = { version = "0.1.1", features = ["async"] }
+nyquest = { version = "0.2.0", features = ["async"] }
 
 compio = { workspace = true, optional = true }
 tokio = { version = "1", default-features = false, features = [
