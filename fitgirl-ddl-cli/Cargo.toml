@@ -15,4 +15,4 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 spdlog-rs = { workspace = true }
 
-argh = "0.1.13"
+palc = "0.0.1"

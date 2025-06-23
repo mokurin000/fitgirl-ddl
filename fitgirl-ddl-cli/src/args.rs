@@ -1,16 +1,20 @@
 use std::path::PathBuf;
 
-use argh::FromArgs;
+use palc::Parser;
 
-#[derive(FromArgs)]
-#[argh(description = "extract direct download links from fitgirl-repacks.site")]
-pub struct Args {
+#[derive(Parser)]
+#[command(
+    version,
+    about,
+    long_about = "extract direct download links from fitgirl repacks"
+)]
+pub struct CliArgs {
     /// number of workers to spawn
-    #[argh(option, default = "3")]
+    #[arg(long, default_value_t = 2)]
     pub workers: usize,
 
     /// directory to save generated aria2 input files
-    #[argh(option, default = "PathBuf::from(\".\")")]
+    #[arg(long, default_value_t = PathBuf::from("."))]
     pub save_dir: PathBuf,
 
     /// url of the game, format is like:
@@ -18,6 +22,6 @@ pub struct Args {
     /// https://fitgirl-repacks.site/the-bards-tale-iv-directors-cut/
     ///
     /// you can type multiple game urls as different arguments
-    #[argh(positional)]
+    #[arg(value_name = "GAME_URL")]
     pub game_urls: Vec<String>,
 }

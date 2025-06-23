@@ -9,17 +9,18 @@ use fitgirl_ddl_lib::{
 use futures_util::StreamExt as _;
 use itertools::Itertools;
 use spdlog::{error, info};
+use palc::Parser as _;
 
 mod args;
-use args::Args;
+use args::CliArgs;
 
 #[compio::main]
 async fn main() -> Result<(), Box<dyn Error+Send+Sync>> {
-    let Args {
+    let CliArgs {
         workers,
         save_dir,
         game_urls,
-    } = argh::from_env();
+    } = CliArgs::parse();
 
     info!("workers: {workers}, save_dir: {save_dir:?}");
 
