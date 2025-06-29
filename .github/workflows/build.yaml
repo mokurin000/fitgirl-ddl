@@ -1,7 +1,6 @@
 name: Build Releases
 on:
   push:
-    # limit to main branch
     branches: [master]
 permissions:
   contents: write
@@ -22,16 +21,17 @@ jobs:
         run: |
           rev_count=$(git rev-list --count HEAD)
           echo "rev_count=${rev_count}" >> $GITHUB_OUTPUT
-      - name: Create Release
+      - name: Create Draft Release
+        id: create-release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: r${{ steps.vars.outputs.rev_count }}
           prerelease: false
           make_latest: true
-          draft: true  # Create as draft first, will be published when assets are ready
+          draft: true
 
   build-and-upload:
-    name: Release on ${{ matrix.target }}
+    name: Build and Upload for ${{ matrix.target }}
     needs: create-release
     runs-on: ${{ matrix.os }}
     env:
@@ -99,3 +99,16 @@ jobs:
         with:
           files: ${{ matrix.target }}.tar.gz
           tag_name: r${{ needs.create-release.outputs.rev_count }}
+
+  publish-release:
+    name: Publish Release
+    needs: 
+      - create-release
+      - build-and-upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: r${{ needs.create-release.outputs.rev_count }}
+          draft: false
