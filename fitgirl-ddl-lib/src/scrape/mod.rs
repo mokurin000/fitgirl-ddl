@@ -75,28 +75,34 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
 
     let single_tag = match tags.len() {
         0 => return Err(ScrapeError::FuckingFastSourceMissing)?,
-        1 => tags[0],
-        _ => return Err(ScrapeError::UnexpectedURL)?,
+        _ => tags[0],
     };
 
     let fuckingfast_links_selector = Selector::parse(
-        "div.entry-content > ul > li > div.su-spoiler > div.su-spoiler-content > a",
+        "div.entry-content > ul > li:nth-child(2) > div.su-spoiler > div.su-spoiler-content",
     )?;
 
-    let fuckingfast_links: Vec<_> = document
+    let spoiler_content = document
         .select(&fuckingfast_links_selector)
-        .filter_map(|tag| tag.attr("href"))
-        .filter(|href| href.starts_with("https://fuckingfast.co"))
-        .map(str::to_string)
-        .collect();
+        .collect::<Vec<_>>();
+    let spoiler_content = match spoiler_content.len() {
+        0 => None,
+        1 => Some(spoiler_content[0]),
+        _ => return Err(ScrapeError::UnexpectedURL)?,
+    };
 
-    match fuckingfast_links.len() {
-        0 => Ok(vec![
+    if let Some(spoiler) = spoiler_content {
+        Ok(spoiler
+            .select(&Selector::parse("a")?)
+            .filter_map(|tag| tag.attr("href"))
+            .map(str::to_string)
+            .collect())
+    } else {
+        Ok(vec![
             single_tag
                 .attr("href")
                 .ok_or(ScrapeError::FuckingFastSourceMissing)?
                 .to_string(),
-        ]),
-        _ => Ok(fuckingfast_links),
+        ])
     }
 }

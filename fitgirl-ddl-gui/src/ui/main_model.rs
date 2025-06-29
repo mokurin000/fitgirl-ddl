@@ -98,7 +98,7 @@ impl Component for MainModel {
         }
     }
 
-    async fn start(&mut self, sender: &ComponentSender<Self>) {
+    async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
         let window = &mut self.window;
         let fut_window = window.start(
             sender,
@@ -141,7 +141,8 @@ impl Component for MainModel {
             fut_button,
             fut_tbox,
             futures_util::future::join_all(fut_swindows)
-        );
+        )
+        .0
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {

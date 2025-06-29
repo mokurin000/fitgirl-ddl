@@ -1,3 +1,4 @@
+#![allow(unreachable_code)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{error::Error, sync::Arc};
@@ -37,6 +38,6 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     })?;
     spdlog::set_default_logger(new_logger);
 
-    App::new().run::<MainModel>(());
+    App::new(env!("CARGO_PKG_NAME")).run::<MainModel>(());
     Ok(())
 }

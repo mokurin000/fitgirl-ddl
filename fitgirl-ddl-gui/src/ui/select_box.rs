@@ -81,7 +81,7 @@ impl Component for SelectWindow {
         }
     }
 
-    async fn start(&mut self, sender: &winio::ComponentSender<Self>) {
+    async fn start(&mut self, sender: &winio::ComponentSender<Self>) -> ! {
         let fut_window = self.window.start(
             sender,
             |e| match e {
@@ -115,7 +115,8 @@ impl Component for SelectWindow {
             fut_window,
             fut_submit,
             futures_util::future::join_all(fut_cboxes)
-        );
+        )
+        .0
     }
 
     async fn update(
