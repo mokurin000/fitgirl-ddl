@@ -53,9 +53,9 @@ impl Component for SelectWindow {
             let mut cbox = Child::<CheckBox>::init(&window);
             cbox.set_text(group_name);
 
-            if ["optional", "selective"]
+            if ["fitgirl-repacks.site", "FIXED"]
                 .iter()
-                .all(|keyword| !group_name.contains(keyword))
+                .any(|keyword| group_name.contains(keyword))
             {
                 cbox.set_checked(true);
                 cbox.disable();
