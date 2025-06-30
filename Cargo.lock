@@ -269,7 +269,7 @@ checksum = "e0c66c08ce9f0c698cbce5c0279d0bb6ac936d8674174fe48f736533b964f59e"
 dependencies = [
  "anstyle",
  "clap_lex",
- "strsim",
+ "strsim 0.11.1",
 ]
 
 [[package]]
@@ -334,9 +334,9 @@ dependencies = [
 
 [[package]]
 name = "compio-driver"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30290f49f7db94789571025d4caf7b6c80049ecd103ecab4bfc7a514ffbbc30"
+checksum = "737212fe00b4af769f7e8f156c25ffafd5888d4d21834e100ea068dea1086ef8"
 dependencies = [
  "aligned-array",
  "cfg-if",
@@ -465,9 +465,9 @@ dependencies = [
 
 [[package]]
 name = "compio-runtime"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f06580cecafb2569132c0bf2b53b49f309aa32bdce48a5e2c0810e6893bc13ec"
+checksum = "b7df559e87b7ab05ba61c32619f6076dd5cc2daf5a8cb30cb9931fb355d20aff"
 dependencies = [
  "async-task",
  "cfg-if",
@@ -652,6 +652,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a01d95850c592940db9b8194bc39f4bc0e89dee5c4265e4b1807c34a9aba453c"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "859d65a907b6852c9361e3185c862aae7fafd2887876799fa55f5f99dc40d610"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim 0.10.0",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c972679f83bdf9c42bd905396b6c3588a843a17f0f16dfcfa3e2c5d57441835"
+dependencies = [
+ "darling_core",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -818,6 +853,12 @@ dependencies = [
  "nanorand",
  "spin",
 ]
+
+[[package]]
+name = "fnv"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "foldhash"
@@ -1376,6 +1417,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+
+[[package]]
 name = "idna"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1421,6 +1468,18 @@ checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown",
+]
+
+[[package]]
+name = "inherit-methods-macro"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "831739f8836b05db933f3a84783a5af48bd605915dcd10c7435bc74e7947a030"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2634,6 +2693,12 @@ dependencies = [
 
 [[package]]
 name = "strsim"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
+name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
@@ -3375,20 +3440,93 @@ checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
 [[package]]
 name = "winio"
 version = "0.7.0-beta.2"
-source = "git+https://github.com/compio-rs/winio#f799b17e74a79634cf5d3e45167c981a0dc363e8"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
 dependencies = [
- "block2",
  "cfg-if",
  "compio",
  "compio-log",
- "cxx",
- "cxx-build",
- "embed-resource",
- "euclid",
  "futures-util",
- "gtk4",
  "image",
- "libc",
+ "inherit-methods-macro",
+ "winio-elm",
+ "winio-handle",
+ "winio-layout",
+ "winio-primitive",
+ "winio-ui-app-kit",
+ "winio-ui-gtk",
+ "winio-ui-qt",
+ "winio-ui-win32",
+]
+
+[[package]]
+name = "winio-callback"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+
+[[package]]
+name = "winio-elm"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "futures-util",
+ "inherit-methods-macro",
+ "paste",
+ "smallvec",
+ "winio-handle",
+ "winio-layout",
+ "winio-primitive",
+]
+
+[[package]]
+name = "winio-handle"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "cfg-if",
+ "gtk4",
+ "objc2",
+ "objc2-app-kit",
+ "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "winio-layout"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "paste",
+ "taffy",
+ "winio-primitive",
+]
+
+[[package]]
+name = "winio-pollable"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "compio",
+ "rustix",
+]
+
+[[package]]
+name = "winio-primitive"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "bitflags",
+ "euclid",
+ "rgb",
+]
+
+[[package]]
+name = "winio-ui-app-kit"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "block2",
+ "compio",
+ "image",
+ "inherit-methods-macro",
  "local-sync",
  "objc2",
  "objc2-app-kit",
@@ -3397,20 +3535,68 @@ dependencies = [
  "objc2-foundation",
  "objc2-quartz-core",
  "objc2-uniform-type-identifiers",
+ "scoped-tls",
+ "winio-callback",
+ "winio-handle",
+ "winio-primitive",
+]
+
+[[package]]
+name = "winio-ui-gtk"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "gtk4",
+ "image",
+ "inherit-methods-macro",
  "pangocairo",
- "paste",
+ "scoped-tls",
+ "winio-callback",
+ "winio-handle",
+ "winio-pollable",
+ "winio-primitive",
+]
+
+[[package]]
+name = "winio-ui-qt"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "cxx",
+ "cxx-build",
+ "image",
+ "inherit-methods-macro",
+ "local-sync",
  "qt-build-utils",
- "rgb",
+ "scoped-tls",
+ "winio-callback",
+ "winio-handle",
+ "winio-pollable",
+ "winio-primitive",
+]
+
+[[package]]
+name = "winio-ui-win32"
+version = "0.1.0"
+source = "git+https://github.com/compio-rs/winio?branch=dev%2Fsplit#09995a84895039af8fe15bb00bca63a79226f8c8"
+dependencies = [
+ "cfg-if",
+ "compio",
+ "compio-log",
+ "embed-resource",
+ "futures-util",
+ "image",
+ "inherit-methods-macro",
  "scoped-tls",
  "slab",
  "slim-detours-sys",
- "smallvec",
  "sync-unsafe-cell",
- "taffy",
  "widestring",
  "windows",
  "windows-numerics",
  "windows-sys 0.60.2",
+ "winio-handle",
+ "winio-primitive",
 ]
 
 [[package]]
