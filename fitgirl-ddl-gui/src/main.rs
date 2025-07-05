@@ -4,7 +4,7 @@
 use std::{error::Error, sync::Arc};
 
 use spdlog::{Level, sink::FileSink};
-use winio::App;
+use winio::prelude::App;
 
 use crate::ui::main_model::MainModel;
 

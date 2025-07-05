@@ -16,7 +16,7 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 spdlog-rs = { workspace = true }
 
-winio = { git = "https://github.com/compio-rs/winio", default-features = false, branch = "dev/split" }
+winio = { version = "0.7.0", default-features = false }
 ahash = "0.8.12"
 
 serde = { version = "1.0.219", features = ["derive"] }
