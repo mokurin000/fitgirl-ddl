@@ -3,9 +3,9 @@ use std::sync::atomic::AtomicUsize;
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
-use winio::{
-    Button, CheckBox, Child, Component, Enable, Layoutable, Margin, Size, StackPanel, Visible,
-    Window,
+use winio::prelude::{
+    Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Enable, Layoutable, Margin,
+    Orient, Size, StackPanel, Visible, Window, WindowEvent,
 };
 
 use crate::utils::{centralize_window, write_aria2_input};
@@ -41,7 +41,7 @@ impl Component for SelectWindow {
     type Message = SelectMessage;
     type Event = SelectEvent;
 
-    fn init((groups, game_name): Self::Init<'_>, sender: &winio::ComponentSender<Self>) -> Self {
+    fn init((groups, game_name): Self::Init<'_>, sender: &ComponentSender<Self>) -> Self {
         let mut window = Child::<Window>::init(());
         window.set_text(&game_name);
         window.set_size(Size::new(500., 500.));
@@ -81,13 +81,13 @@ impl Component for SelectWindow {
         }
     }
 
-    async fn start(&mut self, sender: &winio::ComponentSender<Self>) -> ! {
+    async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
         let fut_window = self.window.start(
             sender,
             |e| match e {
-                winio::WindowEvent::Close => Some(SelectMessage::CloseWindow),
-                winio::WindowEvent::Resize => Some(SelectMessage::Refresh),
-                winio::WindowEvent::Move => Some(SelectMessage::Refresh),
+                WindowEvent::Close => Some(SelectMessage::CloseWindow),
+                WindowEvent::Resize => Some(SelectMessage::Refresh),
+                WindowEvent::Move => Some(SelectMessage::Refresh),
                 _ => None,
             },
             || SelectMessage::Refresh,
@@ -95,7 +95,7 @@ impl Component for SelectWindow {
         let fut_submit = self.submit.start(
             sender,
             |e| match e {
-                winio::ButtonEvent::Click => {
+                ButtonEvent::Click => {
                     sender.output(SelectEvent::Update);
                     Some(SelectMessage::SaveFile)
                 }
@@ -119,11 +119,7 @@ impl Component for SelectWindow {
         .0
     }
 
-    async fn update(
-        &mut self,
-        message: Self::Message,
-        sender: &winio::ComponentSender<Self>,
-    ) -> bool {
+    async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
         match message {
             SelectMessage::CloseWindow => {
                 sender.output(SelectEvent::Close(self.window_id));
@@ -149,11 +145,11 @@ impl Component for SelectWindow {
         }
     }
 
-    fn render(&mut self, _sender: &winio::ComponentSender<Self>) {
+    fn render(&mut self, _sender: &ComponentSender<Self>) {
         self.window.render();
 
-        let mut layout_out = StackPanel::new(winio::Orient::Vertical);
-        let mut layout = StackPanel::new(winio::Orient::Vertical);
+        let mut layout_out = StackPanel::new(Orient::Vertical);
+        let mut layout = StackPanel::new(Orient::Vertical);
         for cbox in &mut self.checkbox {
             layout
                 .push(cbox)

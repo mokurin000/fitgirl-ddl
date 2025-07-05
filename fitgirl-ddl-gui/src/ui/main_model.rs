@@ -6,10 +6,10 @@ use itertools::Itertools;
 use spdlog::{debug, error, info, warn};
 
 use compio::runtime::spawn;
-use winio::{
-    AsWindow, Button, Child, Component, ComponentSender, Enable, Layoutable, Margin,
-    MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle,
-    Progress, Size, StackPanel, TextBox, Visible, Window, WindowEvent,
+use winio::prelude::{
+    AsWindow, Button, ButtonEvent, Child, Component, ComponentSender, Enable, Layoutable, Margin,
+    MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Orient,
+    Progress, Size, StackPanel, TextBox, TextBoxEvent, Visible, Window, WindowEvent,
 };
 
 use crate::model::Cookie;
@@ -112,7 +112,7 @@ impl Component for MainModel {
         let fut_button = self.button.start(
             sender,
             |e| match e {
-                winio::ButtonEvent::Click => Some(MainMessage::Download),
+                ButtonEvent::Click => Some(MainMessage::Download),
                 _ => None,
             },
             || MainMessage::Redraw,
@@ -130,7 +130,7 @@ impl Component for MainModel {
         let fut_tbox = self.url_edit.start(
             sender,
             |event| match event {
-                winio::TextBoxEvent::Change => Some(MainMessage::Redraw),
+                TextBoxEvent::Change => Some(MainMessage::Redraw),
                 _ => None,
             },
             || MainMessage::Redraw,
@@ -281,11 +281,11 @@ impl Component for MainModel {
             sbox.render();
         }
 
-        let mut layout = StackPanel::new(winio::Orient::Horizontal);
+        let mut layout = StackPanel::new(Orient::Horizontal);
         layout.push(&mut self.url_edit).grow(true).finish();
         layout.push(&mut self.button).finish();
 
-        let mut layout_final = StackPanel::new(winio::Orient::Vertical);
+        let mut layout_final = StackPanel::new(Orient::Vertical);
         layout_final
             .push(&mut layout)
             .grow(true)
