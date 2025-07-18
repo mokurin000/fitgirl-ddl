@@ -10,7 +10,6 @@ pub enum ScrapeError {
     #[error("ill-formed url: {0}")]
     IllFormedURL(#[from] url::ParseError),
     #[error("expected link to single game description")]
-    #[deprecated = "URL check will cause problem"]
     UnexpectedURL,
     #[error("request: {0}")]
     RequestError(String),
