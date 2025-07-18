@@ -87,8 +87,7 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
         .collect::<Vec<_>>();
     let spoiler_content = match spoiler_content.len() {
         0 => None,
-        1 => Some(spoiler_content[0]),
-        _ => return Err(ScrapeError::UnexpectedURL)?,
+        _ => Some(spoiler_content[0]),
     };
 
     if let Some(spoiler) = spoiler_content {
