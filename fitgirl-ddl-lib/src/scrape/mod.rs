@@ -85,23 +85,26 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
     let spoiler_content = document
         .select(&fuckingfast_links_selector)
         .collect::<Vec<_>>();
-    let spoiler_content = match spoiler_content.len() {
-        0 => None,
-        _ => Some(spoiler_content[0]),
-    };
-
-    if let Some(spoiler) = spoiler_content {
-        Ok(spoiler
-            .select(&Selector::parse("a")?)
-            .filter_map(|tag| tag.attr("href"))
-            .map(str::to_string)
-            .collect())
-    } else {
-        Ok(vec![
+    match &*spoiler_content {
+        &[] => Ok(vec![
             single_tag
                 .attr("href")
                 .ok_or(ScrapeError::FuckingFastSourceMissing)?
                 .to_string(),
-        ])
+        ]),
+        spoilers => {
+            let mut results = Vec::new();
+            for spoiler in spoilers {
+                results.extend(
+                    spoiler
+                        .select(&Selector::parse("a")?)
+                        .filter_map(|tag| tag.attr("href"))
+                        .map(str::to_string),
+                );
+            }
+            results.sort_unstable();
+            results.dedup();
+            Ok(results)
+        }
     }
 }

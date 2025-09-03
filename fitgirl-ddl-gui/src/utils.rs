@@ -22,7 +22,7 @@ pub struct ExtractionInfo {
 
 pub async fn export_ddl(
     game_urls: impl Iterator<Item = impl Into<String>>,
-    workers: usize,
+    mut workers: usize,
     sender: &ComponentSender<MainModel>,
     selective: bool,
 ) -> Result<ExtractionInfo, ExtractError> {
@@ -74,6 +74,11 @@ pub async fn export_ddl(
         let output_file = format!("{path_part}_full.txt");
 
         info!("start extracting for {path_part}");
+
+        if fuckingfast_links.len() >= 200 {
+            info!("limiting workers due to too lots of DDL");
+            workers = 1;
+        }
 
         let ddls: Vec<_> = futures_util::stream::iter(fuckingfast_links.clone())
             .map(|ff_url| {
