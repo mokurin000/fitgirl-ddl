@@ -4,8 +4,8 @@ use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
 use winio::prelude::{
-    Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Enable, Layoutable, Margin,
-    Orient, Size, StackPanel, Visible, Window, WindowEvent,
+    Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Layoutable, Margin, Orient,
+    Size, StackPanel, Visible, Window, WindowEvent,
 };
 
 use crate::utils::{centralize_window, write_aria2_input};
@@ -58,7 +58,6 @@ impl Component for SelectWindow {
                 .any(|keyword| group_name.contains(keyword))
             {
                 cbox.set_checked(true);
-                cbox.disable();
             }
 
             checkbox.push(cbox);
