@@ -48,6 +48,8 @@ impl Component for SelectWindow {
 
         centralize_window(&mut window);
 
+        
+
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
             let mut cbox = Child::<CheckBox>::init(&window);

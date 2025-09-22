@@ -55,7 +55,7 @@ impl Component for MainModel {
         let mut button = Child::<Button>::init(&window);
         button.set_text(" Scrape ");
         let mut progress = Child::<Progress>::init(&window);
-        progress.set_range(0, 1);
+        progress.set_maximum(1);
 
         spawn(async {
             info!("init: nyquest");
@@ -190,7 +190,7 @@ impl Component for MainModel {
                 self.button.disable();
 
                 // reset range
-                self.progress.set_range(0, 0);
+                self.progress.set_pos(0);
                 let selective = true;
 
                 spawn(async move {
@@ -255,7 +255,7 @@ impl Component for MainModel {
             MainMessage::SetMaxCap(new) => {
                 debug!("received max capacity! new cap: {new}");
 
-                self.progress.set_range(0, new);
+                self.progress.set_maximum(new);
                 self.progress.set_pos(0);
                 self.position = 0;
 
