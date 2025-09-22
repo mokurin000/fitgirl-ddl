@@ -12,7 +12,7 @@ opt-level = "s"
 [workspace.dependencies]
 fitgirl-ddl-lib = { path = "./fitgirl-ddl-lib" }
 nyquest-preset = { version = "0.3.0", features = ["async"] }
-compio = { version = "0.15.0", default-features = false, features = [
+compio = { version = "0.16.0", default-features = false, features = [
     "runtime",
     "io-uring",
     "macros",

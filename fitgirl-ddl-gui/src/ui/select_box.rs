@@ -3,9 +3,12 @@ use std::sync::atomic::AtomicUsize;
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
-use winio::prelude::{
-    Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Layoutable, Margin, Orient,
-    Size, StackPanel, Visible, Window, WindowEvent,
+use winio::{
+    prelude::{
+        Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Layoutable, Margin,
+        Orient, Size, StackPanel, Visible, Window, WindowEvent,
+    },
+    widgets::ScrollView,
 };
 
 use crate::utils::{centralize_window, write_aria2_input};
@@ -15,6 +18,7 @@ pub struct SelectWindow {
     pub window_id: usize,
 
     pub window: Child<Window>,
+    pub scroll: Child<ScrollView>,
     pub checkbox: Vec<Child<CheckBox>>,
     pub submit: Child<Button>,
 
@@ -48,11 +52,12 @@ impl Component for SelectWindow {
 
         centralize_window(&mut window);
 
-        
-
+        let mut scroll = Child::<ScrollView>::init(&window);
+        scroll.set_vscroll(true);
+        scroll.set_hscroll(false);
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
-            let mut cbox = Child::<CheckBox>::init(&window);
+            let mut cbox = Child::<CheckBox>::init(&scroll);
             cbox.set_text(group_name);
 
             if ["fitgirl-repacks.site", "FIXED"]
@@ -75,6 +80,7 @@ impl Component for SelectWindow {
         Self {
             window_id: SWINDOW_ID.fetch_add(1, std::sync::atomic::Ordering::AcqRel),
             window,
+            scroll,
             checkbox,
             submit,
             groups,
@@ -111,10 +117,14 @@ impl Component for SelectWindow {
                 c.start(sender, |_| None, || SelectMessage::Refresh).await;
             })
             .collect::<Vec<_>>();
+        let fut_scoll = self
+            .scroll
+            .start(sender, |_| None, || SelectMessage::Refresh);
 
         futures_util::join!(
             fut_window,
             fut_submit,
+            fut_scoll,
             futures_util::future::join_all(fut_cboxes)
         )
         .0
@@ -150,16 +160,20 @@ impl Component for SelectWindow {
         self.window.render();
 
         let mut layout_out = StackPanel::new(Orient::Vertical);
-        let mut layout = StackPanel::new(Orient::Vertical);
+        let mut cbox_scroll = StackPanel::new(Orient::Horizontal);
+
+        let mut cboxes = StackPanel::new(Orient::Vertical);
         for cbox in &mut self.checkbox {
-            layout
+            cboxes
                 .push(cbox)
                 .margin(Margin::new(5., 5., 5., 5.))
                 .finish();
         }
+        cbox_scroll.push(&mut cboxes).grow(false).finish();
+        cbox_scroll.push(&mut self.scroll).grow(false).finish();
 
         layout_out
-            .push(&mut layout)
+            .push(&mut cbox_scroll)
             .grow(true)
             .margin(Margin::new(5., 5., 5., 5.))
             .finish();
