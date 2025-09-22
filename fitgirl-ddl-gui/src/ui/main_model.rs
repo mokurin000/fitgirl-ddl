@@ -55,6 +55,7 @@ impl Component for MainModel {
         let mut button = Child::<Button>::init(&window);
         button.set_text(" Scrape ");
         let mut progress = Child::<Progress>::init(&window);
+        progress.set_minimum(0);
         progress.set_maximum(1);
 
         spawn(async {
