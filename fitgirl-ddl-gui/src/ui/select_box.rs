@@ -3,13 +3,7 @@ use std::sync::atomic::AtomicUsize;
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
-use winio::{
-    prelude::{
-        Button, ButtonEvent, CheckBox, Child, Component, ComponentSender, Layoutable, Margin,
-        Orient, Size, StackPanel, Visible, Window, WindowEvent,
-    },
-    widgets::ScrollView,
-};
+use winio::prelude::*;
 
 use crate::utils::{centralize_window, write_aria2_input};
 
@@ -28,6 +22,7 @@ pub struct SelectWindow {
 
 #[derive(Debug, Clone)]
 pub enum SelectMessage {
+    Noop,
     CloseWindow,
     Refresh,
     SaveFile,
@@ -46,34 +41,37 @@ impl Component for SelectWindow {
     type Event = SelectEvent;
 
     fn init((groups, game_name): Self::Init<'_>, sender: &ComponentSender<Self>) -> Self {
-        let mut window = Child::<Window>::init(());
-        window.set_text(&game_name);
-        window.set_size(Size::new(500., 500.));
+        init! {
+            window: Window = (()) => {
+                text: &game_name,
+                size: Size::new(500., 500.),
+            },
+            scroll: ScrollView = (&window) => {
+                vscroll: true,
+                hscroll: false,
+            },
+            submit: Button = (&window) => {
+                text: "Confirm",
+            },
+        }
 
         centralize_window(&mut window);
 
-        let mut scroll = Child::<ScrollView>::init(&window);
-        scroll.set_vscroll(true);
-        scroll.set_hscroll(false);
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
-            let mut cbox = Child::<CheckBox>::init(&scroll);
-            cbox.set_text(group_name);
-
-            if ["fitgirl-repacks.site", "FIXED"]
-                .iter()
-                .any(|keyword| group_name.contains(keyword))
-            {
-                cbox.set_checked(true);
+            init! {
+                cbox: CheckBox = (&scroll) => {
+                    text: group_name,
+                    checked: ["fitgirl-repacks.site", "FIXED"]
+                                .iter()
+                                .any(|keyword| group_name.contains(keyword))
+                },
             }
 
             checkbox.push(cbox);
         }
 
-        let mut submit = Child::<Button>::init(&window);
-        submit.set_text("Confirm");
-
-        window.set_visible(true);
+        window.show();
 
         sender.post(SelectMessage::Refresh);
 
@@ -89,49 +87,37 @@ impl Component for SelectWindow {
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
-        let fut_window = self.window.start(
-            sender,
-            |e| match e {
-                WindowEvent::Close => Some(SelectMessage::CloseWindow),
-                WindowEvent::Resize => Some(SelectMessage::Refresh),
-                WindowEvent::Move => Some(SelectMessage::Refresh),
-                _ => None,
-            },
-            || SelectMessage::Refresh,
-        );
-        let fut_submit = self.submit.start(
-            sender,
-            |e| match e {
-                ButtonEvent::Click => {
-                    sender.output(SelectEvent::Update);
-                    Some(SelectMessage::SaveFile)
-                }
-                _ => None,
-            },
-            || SelectMessage::Refresh,
-        );
+        let fut_widgets = async {
+            start! {
+                sender, default: SelectMessage::Noop,
+                self.window => {
+                    WindowEvent::Close => SelectMessage::CloseWindow,
+                    WindowEvent::Resize => SelectMessage::Refresh,
+                },
+                self.submit => {
+                    ButtonEvent::Click => {
+                        sender.output(SelectEvent::Update);
+                        SelectMessage::SaveFile
+                    },
+                },
+                self.scroll => {},
+            }
+        };
         let fut_cboxes = self
             .checkbox
             .iter_mut()
             .map(async |c| {
-                c.start(sender, |_| None, || SelectMessage::Refresh).await;
+                c.start(sender, |_| None, || SelectMessage::Noop).await;
             })
             .collect::<Vec<_>>();
-        let fut_scoll = self
-            .scroll
-            .start(sender, |_| None, || SelectMessage::Refresh);
 
-        futures_util::join!(
-            fut_window,
-            fut_submit,
-            fut_scoll,
-            futures_util::future::join_all(fut_cboxes)
-        )
-        .0
+        futures_util::join!(fut_widgets, futures_util::future::join_all(fut_cboxes)).0
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
-        match message {
+        let mut needs_render = self.scroll.update().await;
+        needs_render |= match message {
+            SelectMessage::Noop => false,
             SelectMessage::CloseWindow => {
                 sender.output(SelectEvent::Close(self.window_id));
                 false
@@ -153,36 +139,25 @@ impl Component for SelectWindow {
                 write_aria2_input(ddls, format!("{}.txt", self.game_name)).await;
                 false
             }
-        }
+        };
+        needs_render
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
         self.window.render();
 
-        let mut layout_out = StackPanel::new(Orient::Vertical);
-        let mut cbox_scroll = StackPanel::new(Orient::Horizontal);
+        let mut layout_out = layout! {
+            StackPanel::new(Orient::Vertical),
+            self.scroll => { grow: true, margin: Margin::new_all_same(5.) },
+            self.submit => { margin: Margin::new_all_same(5.) },
+        };
+
+        layout_out.set_size(self.window.client_size());
 
         let mut cboxes = StackPanel::new(Orient::Vertical);
         for cbox in &mut self.checkbox {
-            cboxes
-                .push(cbox)
-                .margin(Margin::new(5., 5., 5., 5.))
-                .finish();
+            cboxes.push(cbox).margin(Margin::new_all_same(5.)).finish();
         }
-        cbox_scroll.push(&mut cboxes).grow(false).finish();
-        cbox_scroll.push(&mut self.scroll).grow(false).finish();
-
-        layout_out
-            .push(&mut cbox_scroll)
-            .grow(true)
-            .margin(Margin::new(5., 5., 5., 5.))
-            .finish();
-        layout_out
-            .push(&mut self.submit)
-            .grow(false)
-            .margin(Margin::new(5., 5., 5., 5.))
-            .finish();
-
-        layout_out.set_size(self.window.client_size());
+        cboxes.set_size(self.scroll.size());
     }
 }

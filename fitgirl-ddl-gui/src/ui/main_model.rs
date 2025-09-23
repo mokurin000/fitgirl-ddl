@@ -6,11 +6,7 @@ use itertools::Itertools;
 use spdlog::{debug, error, info, warn};
 
 use compio::runtime::spawn;
-use winio::prelude::{
-    AsWindow, Button, ButtonEvent, Child, Component, ComponentSender, Enable, Layoutable, Margin,
-    MaybeBorrowedWindow, MessageBox, MessageBoxButton, MessageBoxResponse, MessageBoxStyle, Orient,
-    Progress, Size, StackPanel, TextBox, TextBoxEvent, Visible, Window, WindowEvent,
-};
+use winio::prelude::*;
 
 use crate::model::Cookie;
 use crate::ui::select_box::{SelectEvent, SelectWindow};
@@ -29,6 +25,7 @@ pub(crate) struct MainModel {
 
 #[derive(Debug, Clone)]
 pub(crate) enum MainMessage {
+    Noop,
     Close,
     Redraw,
     Download,
@@ -45,18 +42,22 @@ impl Component for MainModel {
     type Message = MainMessage;
 
     fn init(_: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Self {
-        let mut window = Child::<Window>::init(());
-        window.set_text("fitgirl-ddl");
-        window.set_size(Size::new(800.0, 130.0));
+        init! {
+            window: Window = (()) => {
+                text: "fitgirl-ddl",
+                size: Size::new(800., 130.),
+            },
+            url_edit: TextBox = (&window),
+            button: Button = (&window) => {
+                text: " Scrape ",
+            },
+            progress: Progress = (&window) => {
+                minimum: 0,
+                maximum: 1,
+            },
+        }
 
         centralize_window(&mut window);
-
-        let url_edit = Child::<TextBox>::init(&window);
-        let mut button = Child::<Button>::init(&window);
-        button.set_text(" Scrape ");
-        let mut progress = Child::<Progress>::init(&window);
-        progress.set_minimum(0);
-        progress.set_maximum(1);
 
         spawn(async {
             info!("init: nyquest");
@@ -87,7 +88,7 @@ impl Component for MainModel {
         })
         .detach();
 
-        window.set_visible(true);
+        window.show();
 
         Self {
             window,
@@ -100,50 +101,32 @@ impl Component for MainModel {
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
-        let window = &mut self.window;
-        let fut_window = window.start(
-            sender,
-            |e| match e {
-                WindowEvent::Close => Some(MainMessage::Close),
-                WindowEvent::Resize => Some(MainMessage::Redraw),
-                _ => None,
-            },
-            || MainMessage::Redraw,
-        );
-        let fut_button = self.button.start(
-            sender,
-            |e| match e {
-                ButtonEvent::Click => Some(MainMessage::Download),
-                _ => None,
-            },
-            || MainMessage::Redraw,
-        );
-        let fut_swindows = self.selective_boxes.values_mut().map(|s| {
-            s.start(
-                sender,
-                |e| match e {
-                    SelectEvent::Update => Some(MainMessage::Redraw),
-                    SelectEvent::Close(window_id) => Some(MainMessage::CloseSelective(window_id)),
+        let fut_widgets = async {
+            start! {
+                sender, default: MainMessage::Noop,
+                self.window => {
+                    WindowEvent::Close => MainMessage::Close,
+                    WindowEvent::Resize => MainMessage::Redraw,
                 },
-                || MainMessage::Redraw,
-            )
+                self.button => {
+                    ButtonEvent::Click => MainMessage::Download,
+                },
+                self.url_edit => {
+                    TextBoxEvent::Change => MainMessage::Redraw,
+                },
+            }
+        };
+        let fut_swindows = self.selective_boxes.values_mut().map(|s| async {
+            start! {
+                sender, default: MainMessage::Noop,
+                s => {
+                    SelectEvent::Update => MainMessage::Redraw,
+                    SelectEvent::Close(window_id) => MainMessage::CloseSelective(window_id),
+                },
+            }
         });
-        let fut_tbox = self.url_edit.start(
-            sender,
-            |event| match event {
-                TextBoxEvent::Change => Some(MainMessage::Redraw),
-                _ => None,
-            },
-            || MainMessage::Redraw,
-        );
 
-        futures_util::join!(
-            fut_window,
-            fut_button,
-            fut_tbox,
-            futures_util::future::join_all(fut_swindows)
-        )
-        .0
+        futures_util::join!(fut_widgets, futures_util::future::join_all(fut_swindows)).0
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
@@ -158,6 +141,7 @@ impl Component for MainModel {
         .any(|b| b);
 
         (match message {
+            MainMessage::Noop => false,
             MainMessage::Close => {
                 if MessageBox::new()
                     .title(env!("CARGO_PKG_NAME"))
@@ -282,20 +266,17 @@ impl Component for MainModel {
             sbox.render();
         }
 
-        let mut layout = StackPanel::new(Orient::Horizontal);
-        layout.push(&mut self.url_edit).grow(true).finish();
-        layout.push(&mut self.button).finish();
+        let mut layout = layout! {
+            StackPanel::new(Orient::Horizontal),
+            self.url_edit => { grow: true },
+            self.button,
+        };
+        let mut layout_final = layout! {
+            StackPanel::new(Orient::Vertical),
+            layout => { grow: true, margin: Margin::new_all_same(5.) },
+            self.progress => { margin: Margin::new_all_same(5.) },
+        };
 
-        let mut layout_final = StackPanel::new(Orient::Vertical);
-        layout_final
-            .push(&mut layout)
-            .grow(true)
-            .margin(Margin::new(5., 5., 5., 5.))
-            .finish();
-        layout_final
-            .push(&mut self.progress)
-            .margin(Margin::new(5., 5., 5., 5.))
-            .finish();
         layout_final.set_size(self.window.client_size());
     }
 }
