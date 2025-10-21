@@ -1,9 +1,9 @@
 #![allow(unreachable_code)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{error::Error, sync::Arc};
+use std::{error::Error, fs::OpenOptions};
 
-use spdlog::{Level, sink::FileSink};
+use tracing_subscriber::EnvFilter;
 use winio::prelude::App;
 
 use crate::ui::main_model::MainModel;
@@ -19,24 +19,13 @@ pub mod model;
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     nyquest_preset::register();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_writer(OpenOptions::new().append(true).create(true).open(
+     concat!(env!("CARGO_PKG_NAME"), ".log")
+        )?)
+        .init();
 
-    spdlog::default_logger().set_level_filter(spdlog::LevelFilter::MoreSevereEqual(
-        if cfg!(debug_assertions) {
-            Level::Debug
-        } else {
-            Level::Info
-        },
-    ));
-    let new_logger = spdlog::default_logger().fork_with(|log| {
-        let file_sink = Arc::new(
-            FileSink::builder()
-                .path(concat!(env!("CARGO_PKG_NAME"), ".log"))
-                .build()?,
-        );
-        log.sinks_mut().push(file_sink);
-        Ok(())
-    })?;
-    spdlog::set_default_logger(new_logger);
 
     App::new(env!("CARGO_PKG_NAME")).run::<MainModel>(());
     Ok(())

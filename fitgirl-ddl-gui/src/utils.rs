@@ -8,7 +8,7 @@ use fitgirl_ddl_lib::{
 };
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
-use spdlog::{error, info, warn};
+use tracing::{error, info, warn};
 use winio::prelude::{ComponentSender, Layoutable as _, Monitor, Window, MonitorExt as _};
 
 use crate::ui::main_model::{MainModel, MainMessage};

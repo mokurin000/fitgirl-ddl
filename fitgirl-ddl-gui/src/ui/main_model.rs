@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fmt::Write};
 use fitgirl_ddl_lib::set_fg_cookies;
 use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
 use itertools::Itertools;
-use spdlog::{debug, error, info, warn};
+use tracing::{debug, error, info, warn};
 
 use compio::runtime::spawn;
 use winio::prelude::*;

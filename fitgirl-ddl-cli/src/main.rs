@@ -8,10 +8,11 @@ use fitgirl_ddl_lib::{
 };
 use futures_util::StreamExt as _;
 use itertools::Itertools;
-use spdlog::{error, info};
+use tracing::{error, info};
 
 mod args;
 use args::Args;
+use tracing_subscriber::EnvFilter;
 
 #[compio::main]
 async fn main() -> Result<(), Box<dyn Error+Send+Sync>> {
@@ -20,6 +21,10 @@ async fn main() -> Result<(), Box<dyn Error+Send+Sync>> {
         save_dir,
         game_urls,
     } = argh::from_env();
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
     info!("workers: {workers}, save_dir: {save_dir:?}");
 

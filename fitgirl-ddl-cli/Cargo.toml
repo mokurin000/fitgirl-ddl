@@ -13,6 +13,7 @@ compio = { workspace = true }
 nyquest-preset = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
-spdlog-rs = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 argh = "0.1.13"

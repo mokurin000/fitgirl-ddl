@@ -14,13 +14,14 @@ nyquest-preset = { workspace = true }
 compio = { workspace = true, features = ["time"] }
 futures-util = { workspace = true }
 itertools = { workspace = true }
-spdlog-rs = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 ahash = "0.8.12"
 
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-winio = { git = "https://github.com/compio-rs/winio", default-features = false}
+winio = { git = "https://github.com/compio-rs/winio", default-features = false }
 
 [features]
 default = ["gtk", "win32", "dark-mode"]

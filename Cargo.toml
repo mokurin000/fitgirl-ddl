@@ -20,6 +20,9 @@ compio = { version = "0.16.0", default-features = false, features = [
 futures-util = "0.3.31"
 itertools = "0.14.0"
 
-spdlog-rs = { version = "0.4.3", default-features = false, features = [
-    "release-level-info",
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version = "0.3.20", default-features = false, features = [
+    "env-filter",
+    "ansi",
+    "std",
 ] }
