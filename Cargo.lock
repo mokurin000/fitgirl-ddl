@@ -3302,9 +3302,9 @@ dependencies = [
 
 [[package]]
 name = "winio-ui-win32"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f8dd0d669fa91d3425a62707dbcd8d7ce6059e40e157b7228aaaa3261e2f2ff"
+checksum = "f62d081e6083e2c50b3f1cffa3da10edb48ed81c6fba1c91eba0abbd6b2c768a"
 dependencies = [
  "compio",
  "compio-log",
