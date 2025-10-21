@@ -120,7 +120,6 @@ impl Component for MainModel {
             start! {
                 sender, default: MainMessage::Noop,
                 s => {
-                    SelectEvent::Update => MainMessage::Redraw,
                     SelectEvent::Close(window_id) => MainMessage::CloseSelective(window_id),
                 },
             }
@@ -129,20 +128,20 @@ impl Component for MainModel {
         futures_util::join!(fut_widgets, futures_util::future::join_all(fut_swindows)).0
     }
 
-    async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
-        debug!("MainModel [update]: {message:?}");
-
-        self.window.update().await;
-        let sub_update = futures_util::future::join_all(
+    async fn update_children(&mut self) -> bool {
+        futures_util::future::join_all(
             self.selective_boxes
                 .values_mut()
                 .map(async |sbox| sbox.update().await),
         )
         .await
         .into_iter()
-        .any(|b| b);
+        .any(|b| b)
+    }
 
-        (match message {
+    async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
+        debug!("MainModel [update]: {message:?}");
+        match message {
             MainMessage::Noop => false,
             MainMessage::Close => {
                 if MessageBox::new()
@@ -259,15 +258,10 @@ impl Component for MainModel {
                 self.selective_boxes.remove_entry(&id);
                 false
             }
-        } || sub_update)
+        }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
-        self.window.render();
-        for sbox in self.selective_boxes.values_mut() {
-            sbox.render();
-        }
-
         let mut layout = layout! {
             StackPanel::new(Orient::Horizontal),
             self.url_edit => { grow: true },
@@ -280,6 +274,12 @@ impl Component for MainModel {
         };
 
         layout_final.set_size(self.window.client_size());
+    }
+
+    fn render_children(&mut self) {
+        for sbox in self.selective_boxes.values_mut() {
+            sbox.render();
+        }
     }
 }
 
