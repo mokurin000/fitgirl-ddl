@@ -4,6 +4,7 @@ use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
 use winio::prelude::*;
+use tracing::debug;
 
 use crate::utils::{centralize_window, write_aria2_input};
 
@@ -115,6 +116,8 @@ impl Component for SelectWindow {
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
+        debug!("SelectWindow [update]: {message:?}");
+
         let mut needs_render = self.scroll.update().await;
         needs_render |= match message {
             SelectMessage::Noop => false,

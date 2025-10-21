@@ -130,6 +130,8 @@ impl Component for MainModel {
     }
 
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
+        debug!("MainModel [update]: {message:?}");
+
         self.window.update().await;
         let sub_update = futures_util::future::join_all(
             self.selective_boxes
