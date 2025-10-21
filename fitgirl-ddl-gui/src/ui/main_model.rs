@@ -120,7 +120,6 @@ impl Component for MainModel {
             start! {
                 sender, default: MainMessage::Noop,
                 s => {
-                    SelectEvent::Update => MainMessage::Redraw,
                     SelectEvent::Close(window_id) => MainMessage::CloseSelective(window_id),
                 },
             }

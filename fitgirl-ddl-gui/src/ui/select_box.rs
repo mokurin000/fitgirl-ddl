@@ -31,7 +31,6 @@ pub enum SelectMessage {
 
 #[derive(Debug, Clone)]
 pub enum SelectEvent {
-    Update,
     Close(usize),
 }
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
@@ -97,7 +96,6 @@ impl Component for SelectWindow {
                 },
                 self.submit => {
                     ButtonEvent::Click => {
-                        sender.output(SelectEvent::Update);
                         SelectMessage::SaveFile
                     },
                 },
@@ -126,7 +124,6 @@ impl Component for SelectWindow {
                 false
             }
             SelectMessage::Refresh => {
-                sender.output(SelectEvent::Update);
                 true
             }
             SelectMessage::SaveFile => {
