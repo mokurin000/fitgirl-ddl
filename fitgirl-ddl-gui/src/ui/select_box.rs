@@ -3,8 +3,8 @@ use std::sync::atomic::AtomicUsize;
 use ahash::AHashMap;
 use fitgirl_ddl_lib::extract::DDL;
 use itertools::Itertools;
-use winio::prelude::*;
 use tracing::debug;
+use winio::prelude::*;
 
 use crate::utils::{centralize_window, write_aria2_input};
 
@@ -31,7 +31,6 @@ pub enum SelectMessage {
 
 #[derive(Debug, Clone)]
 pub enum SelectEvent {
-    Update,
     Close(usize),
 }
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
@@ -96,10 +95,7 @@ impl Component for SelectWindow {
                     WindowEvent::Resize => SelectMessage::Refresh,
                 },
                 self.submit => {
-                    ButtonEvent::Click => {
-                        sender.output(SelectEvent::Update);
-                        SelectMessage::SaveFile
-                    },
+                    ButtonEvent::Click => SelectMessage::SaveFile,
                 },
                 self.scroll => {},
             }
@@ -115,20 +111,20 @@ impl Component for SelectWindow {
         futures_util::join!(fut_widgets, futures_util::future::join_all(fut_cboxes)).0
     }
 
+    async fn update_children(&mut self) -> bool {
+        self.scroll.update().await
+    }
+
     async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
         debug!("SelectWindow [update]: {message:?}");
 
-        let mut needs_render = self.scroll.update().await;
-        needs_render |= match message {
+        match message {
             SelectMessage::Noop => false,
             SelectMessage::CloseWindow => {
                 sender.output(SelectEvent::Close(self.window_id));
                 false
             }
-            SelectMessage::Refresh => {
-                sender.output(SelectEvent::Update);
-                true
-            }
+            SelectMessage::Refresh => true,
             SelectMessage::SaveFile => {
                 let ddls: Vec<_> = self
                     .checkbox
@@ -142,13 +138,10 @@ impl Component for SelectWindow {
                 write_aria2_input(ddls, format!("{}.txt", self.game_name)).await;
                 false
             }
-        };
-        needs_render
+        }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) {
-        self.window.render();
-
         let mut layout_out = layout! {
             StackPanel::new(Orient::Vertical),
             self.scroll => { grow: true, margin: Margin::new_all_same(5.) },
