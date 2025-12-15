@@ -17,17 +17,19 @@ mod ui {
 
 pub mod model;
 
-fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+fn main() -> Result<(), Box<dyn Error>> {
     nyquest_preset::register();
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .with_ansi(false)
-        .with_writer(OpenOptions::new().append(true).create(true).open(
-     concat!(env!("CARGO_PKG_NAME"), ".log")
-        )?)
+        .with_writer(
+            OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open(concat!(env!("CARGO_PKG_NAME"), ".log"))?,
+        )
         .init();
 
-
-    App::new(env!("CARGO_PKG_NAME")).run::<MainModel>(());
+    App::new(env!("CARGO_PKG_NAME"))?.run::<MainModel>(())?;
     Ok(())
 }

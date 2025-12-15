@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::sync::atomic::AtomicUsize;
 
 use ahash::AHashMap;
@@ -35,12 +36,18 @@ pub enum SelectEvent {
 }
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
 impl Component for SelectWindow {
+    type Error = Box<dyn Error>;
     type Init<'a> = (AHashMap<String, Vec<DDL>>, String);
     type Message = SelectMessage;
     type Event = SelectEvent;
 
-    fn init((groups, game_name): Self::Init<'_>, sender: &ComponentSender<Self>) -> Self {
+    async fn init(
+        (groups, game_name): Self::Init<'_>,
+        sender: &ComponentSender<Self>,
+    ) -> Result<Self> {
         init! {
             window: Window = (()) => {
                 text: &game_name,
@@ -55,7 +62,7 @@ impl Component for SelectWindow {
             },
         }
 
-        centralize_window(&mut window);
+        centralize_window(&mut window)?;
 
         let mut checkbox = Vec::with_capacity(groups.len());
         for group_name in groups.keys().sorted() {
@@ -71,11 +78,11 @@ impl Component for SelectWindow {
             checkbox.push(cbox);
         }
 
-        window.show();
+        window.show()?;
 
         sender.post(SelectMessage::Refresh);
 
-        Self {
+        Ok(Self {
             window_id: SWINDOW_ID.fetch_add(1, std::sync::atomic::Ordering::AcqRel),
             window,
             scroll,
@@ -83,7 +90,7 @@ impl Component for SelectWindow {
             submit,
             groups,
             game_name,
-        }
+        })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
@@ -111,49 +118,54 @@ impl Component for SelectWindow {
         futures_util::join!(fut_widgets, futures_util::future::join_all(fut_cboxes)).0
     }
 
-    async fn update_children(&mut self) -> bool {
-        self.scroll.update().await
+    async fn update_children(&mut self) -> Result<bool> {
+        Ok(self.scroll.update().await?)
     }
 
-    async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
+    async fn update(
+        &mut self,
+        message: Self::Message,
+        sender: &ComponentSender<Self>,
+    ) -> Result<bool> {
         debug!("SelectWindow [update]: {message:?}");
 
         match message {
-            SelectMessage::Noop => false,
+            SelectMessage::Noop => Ok(false),
             SelectMessage::CloseWindow => {
                 sender.output(SelectEvent::Close(self.window_id));
-                false
+                Ok(false)
             }
-            SelectMessage::Refresh => true,
+            SelectMessage::Refresh => Ok(true),
             SelectMessage::SaveFile => {
                 let ddls: Vec<_> = self
                     .checkbox
                     .iter()
-                    .filter(|c| c.is_checked())
-                    .map(|c| c.text())
+                    .filter(|c| c.is_checked().unwrap_or_default())
+                    .filter_map(|c| c.text().ok())
                     .filter_map(|t| self.groups.get(&t))
                     .flatten()
                     .collect();
 
                 write_aria2_input(ddls, format!("{}.txt", self.game_name)).await;
-                false
+                Ok(false)
             }
         }
     }
 
-    fn render(&mut self, _sender: &ComponentSender<Self>) {
+    fn render(&mut self, _sender: &ComponentSender<Self>) -> Result<()> {
         let mut layout_out = layout! {
             StackPanel::new(Orient::Vertical),
             self.scroll => { grow: true, margin: Margin::new_all_same(5.) },
             self.submit => { margin: Margin::new_all_same(5.) },
         };
 
-        layout_out.set_size(self.window.client_size());
+        layout_out.set_size(self.window.client_size()?)?;
 
         let mut cboxes = StackPanel::new(Orient::Vertical);
         for cbox in &mut self.checkbox {
             cboxes.push(cbox).margin(Margin::new_all_same(5.)).finish();
         }
-        cboxes.set_size(self.scroll.size());
+        cboxes.set_size(self.scroll.size()?)?;
+        Ok(())
     }
 }

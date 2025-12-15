@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::{collections::BTreeMap, fmt::Write};
 
 use fitgirl_ddl_lib::set_fg_cookies;
@@ -12,6 +13,8 @@ use crate::model::Cookie;
 use crate::ui::select_box::{SelectEvent, SelectWindow};
 use crate::utils::{ExtractionInfo, export_ddl};
 use crate::utils::{centralize_window, collect_groups};
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[allow(unused)]
 pub(crate) struct MainModel {
@@ -37,11 +40,12 @@ pub(crate) enum MainMessage {
 }
 
 impl Component for MainModel {
+    type Error = Box<dyn Error>;
     type Event = ();
     type Init<'a> = ();
     type Message = MainMessage;
 
-    fn init(_: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Self {
+    async fn init(_: Self::Init<'_>, _sender: &ComponentSender<Self>) -> Result<Self> {
         init! {
             window: Window = (()) => {
                 text: "fitgirl-ddl",
@@ -57,47 +61,42 @@ impl Component for MainModel {
             },
         }
 
-        centralize_window(&mut window);
+        centralize_window(&mut window)?;
 
-        spawn(async {
-            info!("init: nyquest");
-            _ = init_nyquest().await;
+        info!("init: nyquest");
+        _ = init_nyquest().await;
 
-            let cookies = match compio::fs::read("cookies.json").await {
-                Err(e) => {
-                    error!("failed to read cookies.json: {e}");
-                    return;
-                }
-                Ok(bytes) => serde_json::from_slice::<Vec<Cookie>>(&bytes),
-            };
-
-            let cookies = match cookies {
-                Err(e) => {
-                    error!("failed to decode cookies.json: {e}");
-                    return;
-                }
-                Ok(c) => c,
-            };
-
-            let _ = set_fg_cookies(
+        match (async {
+            let bytes = compio::fs::read("cookies.json").await?;
+            let cookies = serde_json::from_slice::<Vec<Cookie>>(&bytes)?;
+            set_fg_cookies(
                 cookies
                     .iter()
                     .map(|Cookie { name, value }| format!("{name}={value}"))
                     .join("; "),
-            );
+            )?;
+            Result::Ok(())
         })
-        .detach();
+        .await
+        {
+            Ok(_) => {
+                info!("loaded cookies from cookies.json");
+            }
+            Err(e) => {
+                error!("failed to load cookies: {e}");
+            }
+        }
 
-        window.show();
+        window.show()?;
 
-        Self {
+        Ok(Self {
             window,
             url_edit,
             button,
             progress,
             position: 0,
             selective_boxes: BTreeMap::default(),
-        }
+        })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
@@ -128,21 +127,25 @@ impl Component for MainModel {
         futures_util::join!(fut_widgets, futures_util::future::join_all(fut_swindows)).0
     }
 
-    async fn update_children(&mut self) -> bool {
-        futures_util::future::join_all(
+    async fn update_children(&mut self) -> Result<bool> {
+        Ok(futures_util::future::try_join_all(
             self.selective_boxes
                 .values_mut()
                 .map(async |sbox| sbox.update().await),
         )
-        .await
+        .await?
         .into_iter()
-        .any(|b| b)
+        .any(|b| b))
     }
 
-    async fn update(&mut self, message: Self::Message, sender: &ComponentSender<Self>) -> bool {
+    async fn update(
+        &mut self,
+        message: Self::Message,
+        sender: &ComponentSender<Self>,
+    ) -> Result<bool> {
         debug!("MainModel [update]: {message:?}");
         match message {
-            MainMessage::Noop => false,
+            MainMessage::Noop => Ok(false),
             MainMessage::Close => {
                 if MessageBox::new()
                     .title(env!("CARGO_PKG_NAME"))
@@ -151,32 +154,32 @@ impl Component for MainModel {
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
                     .show(Some(self.window.as_window()))
-                    .await
+                    .await?
                     == MessageBoxResponse::Yes
                 {
                     sender.output(());
                 }
-                false
+                Ok(false)
             }
             MainMessage::DownloadDone => {
-                self.button.enable();
-                false
+                self.button.enable()?;
+                Ok(false)
             }
             MainMessage::Download => {
                 info!("start downloading!");
 
-                let text = self.url_edit.text();
+                let text = self.url_edit.text()?;
                 if text.trim().is_empty() {
                     warn!("please enter URL first!");
-                    return false;
+                    return Ok(false);
                 }
 
                 let sender = sender.clone();
 
-                self.button.disable();
+                self.button.disable()?;
 
                 // reset range
-                self.progress.set_pos(0);
+                self.progress.set_pos(0)?;
                 let selective = true;
 
                 spawn(async move {
@@ -192,6 +195,7 @@ impl Component for MainModel {
                                 MessageBoxStyle::Error,
                             )
                             .await
+                            .ok();
                         }
                         Ok(ExtractionInfo {
                             missing_files,
@@ -217,6 +221,7 @@ impl Component for MainModel {
                                 if !message.is_empty() {
                                     popup_message((), message.trim(), MessageBoxStyle::Warning)
                                         .await
+                                        .ok();
                                 }
                             })
                             .detach();
@@ -227,41 +232,42 @@ impl Component for MainModel {
                 })
                 .detach();
 
-                false
+                Ok(false)
             }
-            MainMessage::Redraw => true,
+            MainMessage::Redraw => Ok(true),
             MainMessage::IncreaseCount => {
                 self.position += 1;
 
                 debug!("received increasement! new pos: {}", self.position);
-                self.progress.set_pos(self.position);
+                self.progress.set_pos(self.position)?;
 
-                false
+                Ok(false)
             }
             MainMessage::SetMaxCap(new) => {
                 debug!("received max capacity! new cap: {new}");
 
-                self.progress.set_maximum(new);
-                self.progress.set_pos(0);
+                self.progress.set_maximum(new)?;
+                self.progress.set_pos(0)?;
                 self.position = 0;
 
-                false
+                Ok(false)
             }
             MainMessage::CreateSelection(ddls, game_name) => {
-                let swindow = Child::<SelectWindow>::init((collect_groups(ddls), game_name));
+                let swindow =
+                    Child::<SelectWindow>::init((collect_groups(ddls), game_name)).await?;
                 let window_id = swindow.window_id;
 
                 self.selective_boxes.insert(window_id, swindow);
-                false
+                Ok(false)
             }
             MainMessage::CloseSelective(id) => {
                 self.selective_boxes.remove_entry(&id);
-                false
+                Ok(false)
             }
         }
     }
 
-    fn render(&mut self, _sender: &ComponentSender<Self>) {
+    fn render(&mut self, _sender: &ComponentSender<Self>) -> Result<()> {
         let mut layout = layout! {
             StackPanel::new(Orient::Horizontal),
             self.url_edit => { grow: true },
@@ -273,13 +279,15 @@ impl Component for MainModel {
             self.progress => { margin: Margin::new_all_same(5.) },
         };
 
-        layout_final.set_size(self.window.client_size());
+        layout_final.set_size(self.window.client_size()?)?;
+        Ok(())
     }
 
-    fn render_children(&mut self) {
+    fn render_children(&mut self) -> Result<()> {
         for sbox in self.selective_boxes.values_mut() {
-            sbox.render();
+            sbox.render()?;
         }
+        Ok(())
     }
 }
 
@@ -287,12 +295,13 @@ async fn popup_message(
     parent: impl Into<MaybeBorrowedWindow<'_>>,
     message: impl AsRef<str>,
     level: MessageBoxStyle,
-) {
+) -> Result<()> {
     MessageBox::new()
         .title(env!("CARGO_PKG_NAME"))
         .message(message)
         .style(level)
         .buttons(MessageBoxButton::Ok)
         .show(parent)
-        .await;
+        .await?;
+    Ok(())
 }
