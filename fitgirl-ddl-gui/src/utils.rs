@@ -1,4 +1,4 @@
-use std::path::{Path, };
+use std::path::Path;
 
 use ahash::AHashMap;
 use fitgirl_ddl_lib::{
@@ -9,9 +9,9 @@ use fitgirl_ddl_lib::{
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
 use tracing::{error, info, warn};
-use winio::prelude::{ComponentSender, Layoutable as _, Monitor, Window, MonitorExt as _};
+use winio::prelude::{ComponentSender, Layoutable as _, Monitor, MonitorExt as _, Window};
 
-use crate::ui::main_model::{MainModel, MainMessage};
+use crate::ui::main_model::{MainMessage, MainModel};
 
 #[allow(unused)]
 pub struct ExtractionInfo {
@@ -111,7 +111,6 @@ pub async fn export_ddl(
             }
         }
 
-
         write_aria2_input(&results, &output_file).await;
 
         if selective {
@@ -128,11 +127,11 @@ pub async fn export_ddl(
     })
 }
 
+#[rustfmt::skip]
 pub async fn write_aria2_input(
     ddls: impl IntoIterator<Item = &DDL>,
     output_file: impl AsRef<Path>,
 ) {
-    #[rustfmt::skip] 
     let output_string: String = ddls
         .into_iter()
         .sorted_by(|&a, &b|{
@@ -152,8 +151,14 @@ pub async fn write_aria2_input(
             },
         ).collect();
 
-    let _ = compio::fs::write(&output_file, output_string.into_bytes()).await;
-    info!("saved: {:?}", output_file.as_ref());
+    match compio::fs::write(&output_file, output_string.into_bytes()).await.0 {
+        Ok(_) => {
+            info!("saved: {:?}", output_file.as_ref());
+        }
+        Err(e) => {
+            error!("failed to save {:?}: {e}", output_file.as_ref());
+        }
+    }
 }
 
 pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, Vec<DDL>> {
@@ -177,8 +182,9 @@ pub fn collect_groups(ddls: impl IntoIterator<Item = DDL>) -> AHashMap<String, V
     groups
 }
 
-pub fn centralize_window(window: &mut Window) {
+pub fn centralize_window(window: &mut Window) -> winio::Result<()> {
     // centralize
-    let monitor = Monitor::all().first().unwrap().client_scaled();
-    window.set_loc(monitor.origin + monitor.size / 2. - window.size() / 2.);
+    let monitor = Monitor::all()?.first().unwrap().client_scaled();
+    window.set_loc(monitor.origin + monitor.size / 2. - window.size()? / 2.)?;
+    Ok(())
 }
