@@ -10,7 +10,7 @@ pub fn process_time(rfc3339: &str) -> Result<DateTime<Local>, Box<dyn Error + Se
 }
 
 pub fn display_table(
-    i: impl Iterator<Item = SearchEntry>,
+    i: impl IntoIterator<Item = SearchEntry>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     use richrs::prelude::*;
 

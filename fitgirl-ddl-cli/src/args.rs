@@ -36,6 +36,12 @@ pub struct Search {
     /// whether to display results in better looking
     #[argh(switch)]
     pub rich_ui: bool,
+
+    /// whether to sort results by date
+    ///
+    /// acceptable values: "asc", "dsc"
+    #[argh(option)]
+    pub sort_by_date: Option<String>,
 }
 
 /// extract direct download links from fitgirl-repacks.site

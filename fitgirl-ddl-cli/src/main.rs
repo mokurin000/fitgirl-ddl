@@ -8,7 +8,7 @@ use fitgirl_ddl_lib::{
 };
 use futures_util::StreamExt as _;
 use itertools::Itertools;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
 mod args;
@@ -36,22 +36,39 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             page,
             limit,
             rich_ui,
+            sort_by_date,
         }) => {
             let results = search_games(&query, page.into()).await?;
-            let iter = results.into_iter().take(limit.into()).map(|s| SearchEntry {
-                date: process_time(&s.date)
-                    .unwrap()
-                    .format("%Y-%m-%d")
-                    .to_string(),
-                ..s
-            });
+            let mut results = results
+                .into_iter()
+                .take(limit.into())
+                .map(|s| SearchEntry {
+                    date: process_time(&s.date)
+                        .unwrap()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string(),
+                    ..s
+                })
+                .collect::<Vec<_>>();
+
+            match sort_by_date.as_deref() {
+                None => (),
+                Some("asc") => {
+                    results.sort_by_key(|e| e.date.clone());
+                }
+                Some("dsc") => {
+                    results.sort_by_key(|e| e.date.clone());
+                    results.reverse();
+                }
+                Some(order) => warn!("invalid sort order: {order}"),
+            }
 
             if rich_ui {
-                display_table(iter)?;
+                display_table(results)?;
                 return Ok(());
             }
 
-            for SearchEntry { href, title, date } in iter {
+            for SearchEntry { href, title, date } in results {
                 println!("Title: {title}");
                 println!("Date: {date}");
                 println!("Link: {href}");
