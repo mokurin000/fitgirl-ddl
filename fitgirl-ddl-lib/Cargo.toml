@@ -6,10 +6,10 @@ license = "MIT"
 description = "extract DDL from fitgirl-repacks.site"
 
 [dependencies]
-scraper = { version = "0.25.0", features = ["atomic"] }
 thiserror = "2.0.12"
 url = "2.5.4"
 
+scraper = { workspace = true }
 nyquest = { workspace = true }
 compio = { workspace = true, optional = true }
 

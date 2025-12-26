@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{num::NonZeroUsize, path::PathBuf};
 
 use argh::FromArgs;
 
@@ -17,13 +17,17 @@ pub enum Commands {
     Fetch(Fetch),
 }
 
-/// extract direct download links from fitgirl-repacks.site
+/// search games from fitgirl-repacks
 #[derive(FromArgs)]
 #[argh(subcommand, name = "search")]
 pub struct Search {
     /// search keyword
     #[argh(option)]
     pub query: String,
+
+    /// result page, cannot be zero
+    #[argh(option)]
+    pub page: NonZeroUsize,
 }
 
 /// extract direct download links from fitgirl-repacks.site

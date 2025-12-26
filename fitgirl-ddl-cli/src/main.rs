@@ -9,12 +9,17 @@ use fitgirl_ddl_lib::{
 use futures_util::StreamExt as _;
 use itertools::Itertools;
 use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
+
+mod search;
 
 mod args;
 use args::Fetch;
-use tracing_subscriber::EnvFilter;
 
-use crate::args::{Cli, Commands};
+use crate::{
+    args::{Cli, Commands, Search},
+    search::{SearchEntry, search_games},
+};
 
 #[compio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -26,7 +31,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     init_nyquest().await?;
 
     match argh::from_env::<Cli>().command {
-        Commands::Search(_) => {}
+        Commands::Search(Search { query, page }) => {
+            for SearchEntry { href, title } in search_games(&query, page.into()).await? {
+                println!("Title: {title}");
+                println!("Detail: {href}");
+                println!();
+            }
+        }
         Commands::Fetch(Fetch {
             workers,
             save_dir,
