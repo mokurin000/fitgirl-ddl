@@ -31,18 +31,26 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     init_nyquest().await?;
 
     match argh::from_env::<Cli>().command {
-        Commands::Search(Search { query, page, limit }) => {
-            for SearchEntry { href, title, date } in search_games(&query, page.into())
-                .await?
-                .iter()
-                .take(limit.into())
-            {
-                let date = process_time(date)?.format("%Y-%m-%d %H:%M:%S");
+        Commands::Search(Search {
+            query,
+            page,
+            limit,
+            rich_ui,
+        }) => {
+            let results = search_games(&query, page.into()).await?;
+            let iter = results.iter().take(limit.into());
 
-                println!("Title: {title}");
-                println!("Date: {date}");
-                println!("Link: {href}");
-                println!();
+            if rich_ui {
+                unimplemented!("ratatui is coming!")
+            } else {
+                for SearchEntry { href, title, date } in iter {
+                    let date = process_time(date)?.format("%Y-%m-%d %H:%M:%S");
+
+                    println!("Title: {title}");
+                    println!("Date: {date}");
+                    println!("Link: {href}");
+                    println!();
+                }
             }
         }
         Commands::Fetch(Fetch {

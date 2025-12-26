@@ -32,6 +32,10 @@ pub struct Search {
     /// result amount limitation
     #[argh(option, default = "NonZeroUsize::new(10).unwrap()")]
     pub limit: NonZeroUsize,
+
+    /// whether to display results in better looking
+    #[argh(switch)]
+    pub rich_ui: bool,
 }
 
 /// extract direct download links from fitgirl-repacks.site
