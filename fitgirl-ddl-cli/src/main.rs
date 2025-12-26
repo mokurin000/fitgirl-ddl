@@ -11,14 +11,14 @@ use itertools::Itertools;
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
-mod search;
-
 mod args;
-use args::Fetch;
+mod search;
+mod utils;
 
 use crate::{
-    args::{Cli, Commands, Search},
+    args::{Cli, Commands, Fetch, Search},
     search::{SearchEntry, search_games},
+    utils::process_time,
 };
 
 #[compio::main]
@@ -31,10 +31,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     init_nyquest().await?;
 
     match argh::from_env::<Cli>().command {
-        Commands::Search(Search { query, page }) => {
-            for SearchEntry { href, title } in search_games(&query, page.into()).await? {
+        Commands::Search(Search { query, page, limit }) => {
+            for SearchEntry { href, title, date } in search_games(&query, page.into())
+                .await?
+                .iter()
+                .take(limit.into())
+            {
+                let date = process_time(date)?.format("%Y-%m-%d %H:%M:%S");
+
                 println!("Title: {title}");
-                println!("Detail: {href}");
+                println!("Date: {date}");
+                println!("Link: {href}");
                 println!();
             }
         }

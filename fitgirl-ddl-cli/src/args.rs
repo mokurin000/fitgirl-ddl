@@ -26,8 +26,12 @@ pub struct Search {
     pub query: String,
 
     /// result page, cannot be zero
-    #[argh(option)]
+    #[argh(option, default = "NonZeroUsize::new(1).unwrap()")]
     pub page: NonZeroUsize,
+
+    /// result amount limitation
+    #[argh(option, default = "NonZeroUsize::new(10).unwrap()")]
+    pub limit: NonZeroUsize,
 }
 
 /// extract direct download links from fitgirl-repacks.site
