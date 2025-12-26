@@ -18,7 +18,7 @@ mod utils;
 use crate::{
     args::{Cli, Commands, Fetch, Search},
     search::{SearchEntry, search_games},
-    utils::process_time,
+    utils::{display_table, process_time},
 };
 
 #[compio::main]
@@ -38,19 +38,24 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             rich_ui,
         }) => {
             let results = search_games(&query, page.into()).await?;
-            let iter = results.iter().take(limit.into());
+            let iter = results.into_iter().take(limit.into()).map(|s| SearchEntry {
+                date: process_time(&s.date)
+                    .unwrap()
+                    .format("%Y-%m-%d")
+                    .to_string(),
+                ..s
+            });
 
             if rich_ui {
-                unimplemented!("ratatui is coming!")
-            } else {
-                for SearchEntry { href, title, date } in iter {
-                    let date = process_time(date)?.format("%Y-%m-%d %H:%M:%S");
+                display_table(iter)?;
+                return Ok(());
+            }
 
-                    println!("Title: {title}");
-                    println!("Date: {date}");
-                    println!("Link: {href}");
-                    println!();
-                }
+            for SearchEntry { href, title, date } in iter {
+                println!("Title: {title}");
+                println!("Date: {date}");
+                println!("Link: {href}");
+                println!();
             }
         }
         Commands::Fetch(Fetch {
