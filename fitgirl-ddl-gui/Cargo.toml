@@ -11,7 +11,7 @@ path = "src/main.rs"
 [dependencies]
 fitgirl-ddl-lib = { workspace = true }
 nyquest-preset = { workspace = true }
-compio = { workspace = true, features = ["time"] }
+compio = { workspace = true, features = ["time", "fs"] }
 futures-util = { workspace = true }
 itertools = { workspace = true }
 tracing = { workspace = true }
@@ -19,7 +19,7 @@ ahash = "0.8.12"
 
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-winio = { version = "0.10.0", default-features = false, features = [
+winio = { version = "0.11.0", default-features = false, features = [
     "enable_log",
 ] }
 

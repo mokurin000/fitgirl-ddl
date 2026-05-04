@@ -10,16 +10,16 @@ panic = "abort"
 opt-level = "s"
 
 [workspace.dependencies]
-scraper = { version = "0.25.0", features = ["atomic"] }
+scraper = { version = "0.26.0", features = ["atomic"] }
 fitgirl-ddl-lib = { path = "./fitgirl-ddl-lib" }
 nyquest = { version = "0.4.0", features = ["async"] }
 nyquest-preset = { version = "0.4.0", features = ["async"] }
-compio = { version = "0.17.0", default-features = false, features = [
+compio = { version = "0.18.0", default-features = false, features = [
     "runtime",
     "io-uring",
     "macros",
 ] }
-futures-util = "0.3.31"
+futures-util = "0.3.32"
 itertools = "0.14.0"
 
-tracing = { version = "0.1.41" }
+tracing = { version = "0.1.44" }
