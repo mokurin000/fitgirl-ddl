@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{cmp::Reverse, error::Error};
 
 use fitgirl_ddl_lib::{
     errors::ExtractError,
@@ -57,8 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     results.sort_by_key(|e| e.date.clone());
                 }
                 Some("dsc") => {
-                    results.sort_by_key(|e| e.date.clone());
-                    results.reverse();
+                    results.sort_by_key(|e| Reverse(e.date.clone()));
                 }
                 Some(order) => warn!("invalid sort order: {order}"),
             }
