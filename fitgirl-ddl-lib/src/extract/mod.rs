@@ -1,6 +1,7 @@
 use scraper::Selector;
 
-use crate::{NYQUEST_CLIENT, errors::ExtractError};
+use crate::NYQUEST_CLIENT;
+use crate::errors::ExtractError;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, Clone)]

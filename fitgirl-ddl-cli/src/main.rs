@@ -1,11 +1,10 @@
-use std::{cmp::Reverse, error::Error};
+use std::cmp::Reverse;
+use std::error::Error;
 
-use fitgirl_ddl_lib::{
-    errors::ExtractError,
-    extract::{DDL, extract_ddl},
-    init_nyquest,
-    scrape::{GameInfo, scrape_game},
-};
+use fitgirl_ddl_lib::errors::ExtractError;
+use fitgirl_ddl_lib::extract::{DDL, extract_ddl};
+use fitgirl_ddl_lib::init_nyquest;
+use fitgirl_ddl_lib::scrape::{GameInfo, scrape_game};
 use futures_util::StreamExt as _;
 use itertools::Itertools;
 use tracing::{error, info, warn};
@@ -15,11 +14,9 @@ mod args;
 mod search;
 mod utils;
 
-use crate::{
-    args::{Cli, Commands, Fetch, Search},
-    search::{SearchEntry, search_games},
-    utils::{display_table, process_time},
-};
+use crate::args::{Cli, Commands, Fetch, Search};
+use crate::search::{SearchEntry, search_games};
+use crate::utils::{display_table, process_time};
 
 #[compio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {

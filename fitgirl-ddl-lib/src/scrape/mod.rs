@@ -1,7 +1,8 @@
 use scraper::Selector;
 use url::Url;
 
-use crate::{FITGIRL_COOKIES, NYQUEST_CLIENT, errors::ScrapeError};
+use crate::errors::ScrapeError;
+use crate::{FITGIRL_COOKIES, NYQUEST_CLIENT};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]

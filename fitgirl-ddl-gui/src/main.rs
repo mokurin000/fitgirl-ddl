@@ -1,7 +1,8 @@
 #![allow(unreachable_code)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{error::Error, fs::OpenOptions};
+use std::error::Error;
+use std::fs::OpenOptions;
 
 use tracing_subscriber::EnvFilter;
 use winio::prelude::App;

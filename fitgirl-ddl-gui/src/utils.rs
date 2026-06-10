@@ -1,11 +1,9 @@
 use std::path::Path;
 
 use ahash::AHashMap;
-use fitgirl_ddl_lib::{
-    errors::ExtractError,
-    extract::{DDL, extract_ddl},
-    scrape::{GameInfo, scrape_game},
-};
+use fitgirl_ddl_lib::errors::ExtractError;
+use fitgirl_ddl_lib::extract::{DDL, extract_ddl};
+use fitgirl_ddl_lib::scrape::{GameInfo, scrape_game};
 use futures_util::StreamExt as _;
 use itertools::Itertools as _;
 use tracing::{error, info, warn};

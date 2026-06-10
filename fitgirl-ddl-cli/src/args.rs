@@ -1,4 +1,5 @@
-use std::{num::NonZeroUsize, path::PathBuf};
+use std::num::NonZeroUsize;
+use std::path::PathBuf;
 
 use argh::FromArgs;
 

@@ -1,8 +1,9 @@
+use std::collections::BTreeMap;
 use std::error::Error;
-use std::{collections::BTreeMap, fmt::Write};
+use std::fmt::Write;
 
-use fitgirl_ddl_lib::set_fg_cookies;
-use fitgirl_ddl_lib::{extract::DDL, init_nyquest};
+use fitgirl_ddl_lib::extract::DDL;
+use fitgirl_ddl_lib::{init_nyquest, set_fg_cookies};
 use itertools::Itertools;
 use tracing::{debug, error, info, warn};
 
@@ -11,8 +12,7 @@ use winio::prelude::*;
 
 use crate::model::Cookie;
 use crate::ui::select_box::{SelectEvent, SelectWindow};
-use crate::utils::{ExtractionInfo, export_ddl};
-use crate::utils::{centralize_window, collect_groups};
+use crate::utils::{ExtractionInfo, centralize_window, collect_groups, export_ddl};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
