@@ -30,6 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .init();
 
-    App::new(env!("CARGO_PKG_NAME"))?.run::<MainModel>(())?;
+    App::new(env!("CARGO_PKG_NAME"))?.run_until_event::<MainModel>(())?;
     Ok(())
 }

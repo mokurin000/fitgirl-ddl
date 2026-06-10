@@ -10,7 +10,7 @@ panic = "abort"
 opt-level = "s"
 
 [workspace.dependencies]
-scraper = { version = "0.26.0", features = ["atomic"] }
+scraper = { version = "0.27.0", features = ["atomic"] }
 fitgirl-ddl-lib = { path = "./fitgirl-ddl-lib" }
 nyquest = { version = "0.4.0", features = ["async"] }
 nyquest-preset = { version = "0.4.0", features = ["async"] }

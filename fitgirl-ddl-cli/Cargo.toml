@@ -9,7 +9,7 @@ path = "./src/main.rs"
 
 [dependencies]
 fitgirl-ddl-lib = { workspace = true }
-compio = { workspace = true }
+compio = { workspace = true, features = ["fs"] }
 nyquest-preset = { workspace = true }
 futures-util = { workspace = true }
 itertools = { workspace = true }
