@@ -1,8 +1,8 @@
 use scraper::Selector;
-use url::Url;
+use wreq::{Method, Uri};
 
 use crate::errors::ScrapeError;
-use crate::{FITGIRL_COOKIES, NYQUEST_CLIENT};
+use crate::{FITGIRL_COOKIES, HTTP_CLIENT};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
@@ -12,27 +12,22 @@ pub struct GameInfo {
 }
 
 pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> {
-    let url = Url::parse(url.as_ref())?;
+    let url: Uri = url.as_ref().parse()?;
 
-    let path_part = url
-        .path_segments()
-        .ok_or(ScrapeError::IllFormedURL(
-            url::ParseError::RelativeUrlWithCannotBeABaseBase,
-        ))?
-        .next()
-        // unlikely to happen on valid https URLs
+    let path_slug = url
+        .path()
+        .split("/")
+        .find(|s| !s.is_empty())
         .ok_or(ScrapeError::UnexpectedURL)?
         .to_string();
 
-    let mut req = nyquest::Request::get(url.to_string());
+    let mut req = wreq::Request::new(Method::GET, url);
     if let Some(cookies) = FITGIRL_COOKIES.get() {
-        req = req.with_header("Cookie", cookies);
+        req.headers_mut().insert("Cookie", cookies.clone());
     }
 
-    let resp = NYQUEST_CLIENT
-        .get()
-        .unwrap()
-        .request(req)
+    let resp = HTTP_CLIENT
+        .execute(req)
         .await
         .map_err(|e| ScrapeError::RequestError(e.to_string()))?;
 
@@ -55,7 +50,7 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .map_err(|_| ScrapeError::JoinError)??;
 
     Ok(GameInfo {
-        path_part,
+        path_part: path_slug,
         fuckingfast_links,
     })
 }

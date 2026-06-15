@@ -1,14 +1,14 @@
 use scraper::error::SelectorErrorKind;
 use thiserror::Error;
 
-#[derive(Debug, Error, Clone)]
+#[derive(Debug, Error)]
 pub enum ScrapeError {
     #[error("IP was banned by ddos-guard!")]
     DDoSGuarded,
     #[error("fuckingfast.co source was missing")]
     FuckingFastSourceMissing,
-    #[error("ill-formed url: {0}")]
-    IllFormedURL(#[from] url::ParseError),
+    #[error("ill-formed uri: {0}")]
+    IllFormedURI(#[from] http::uri::InvalidUri),
     #[error("expected link to single game description")]
     UnexpectedURL,
     #[error("request: {0}")]
@@ -25,7 +25,7 @@ impl From<SelectorErrorKind<'_>> for ScrapeError {
     }
 }
 
-#[derive(Debug, Error, Clone)]
+#[derive(Debug, Error)]
 pub enum ExtractError {
     #[error("filename was not found")]
     FilenameMissing,
@@ -35,6 +35,8 @@ pub enum ExtractError {
     RequestError(String),
     #[error("invalid css selector")]
     InvalidCSSSelector,
+    #[error("ill-formed uri: {0}")]
+    IllFormedURI(#[from] http::uri::InvalidUri),
     #[error("join error")]
     JoinError,
     #[error("rate limited")]

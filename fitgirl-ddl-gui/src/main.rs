@@ -6,6 +6,7 @@ use std::fs::OpenOptions;
 
 use tracing_subscriber::EnvFilter;
 use winio::prelude::App;
+use winio::ui::ComponentExt;
 
 use crate::ui::main_model::MainModel;
 
@@ -18,8 +19,10 @@ mod ui {
 
 pub mod model;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    nyquest_preset::register();
+#[compio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    color_eyre::install()?;
+
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .with_ansi(false)
@@ -31,6 +34,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .init();
 
-    App::new(env!("CARGO_PKG_NAME"))?.run_until_event::<MainModel>(())?;
+    App::builder()
+        .name(env!("CARGO_PKG_NAME"))
+        .build()?
+        .block_on(async { MainModel::run_until_event(()).await })?;
     Ok(())
 }

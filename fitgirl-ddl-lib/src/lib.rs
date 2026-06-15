@@ -1,30 +1,27 @@
-use std::sync::OnceLock;
+use std::sync::{LazyLock, OnceLock};
 
-use nyquest::AsyncClient;
+use http::HeaderValue;
+use wreq::Client;
 
 pub mod errors;
 pub mod extract;
 pub mod scrape;
 
-pub static NYQUEST_CLIENT: OnceLock<AsyncClient> = OnceLock::new();
-pub static FITGIRL_COOKIES: OnceLock<String> = OnceLock::new();
+pub use http;
+pub use wreq::{Request, RequestBuilder};
 
-/// Initializes nyquest client.
-pub async fn init_nyquest() -> nyquest::Result<()> {
-    let async_client = nyquest::ClientBuilder::default()
-        .user_agent(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
-        )
-        .build_async()
-        .await?;
-    _ = NYQUEST_CLIENT.set(async_client);
-    Ok(())
-}
+pub static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    wreq::Client::builder()
+        .emulation(wreq_util::Emulation::Firefox148)
+        .build()
+        .unwrap()
+});
+pub static FITGIRL_COOKIES: OnceLock<HeaderValue> = OnceLock::new();
 
 /// Accepts cookies in form like `name1=value1; name=value2; ...`,
 /// Also see [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cookie).
 ///
 /// Once cookies for fitgirl was initialized, this function returns Err(cookies)
-pub fn set_fg_cookies(cookies: impl Into<String>) -> Result<(), String> {
+pub fn set_fg_cookies(cookies: impl Into<HeaderValue>) -> Result<(), HeaderValue> {
     FITGIRL_COOKIES.set(cookies.into())
 }

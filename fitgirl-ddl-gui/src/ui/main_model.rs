@@ -3,7 +3,8 @@ use std::error::Error;
 use std::fmt::Write;
 
 use fitgirl_ddl_lib::extract::DDL;
-use fitgirl_ddl_lib::{init_nyquest, set_fg_cookies};
+use fitgirl_ddl_lib::http::HeaderValue;
+use fitgirl_ddl_lib::set_fg_cookies;
 use itertools::Itertools;
 use tracing::{debug, error, info, warn};
 
@@ -63,18 +64,14 @@ impl Component for MainModel {
 
         centralize_window(&mut window)?;
 
-        info!("init: nyquest");
-        _ = init_nyquest().await;
-
         match (async {
             let bytes = compio::fs::read("cookies.json").await?;
             let cookies = serde_json::from_slice::<Vec<Cookie>>(&bytes)?;
-            set_fg_cookies(
-                cookies
-                    .iter()
-                    .map(|Cookie { name, value }| format!("{name}={value}"))
-                    .join("; "),
-            )?;
+            let cookies = cookies
+                .iter()
+                .map(|Cookie { name, value }| format!("{name}={value}"))
+                .join("; ");
+            _ = set_fg_cookies(HeaderValue::from_str(&cookies)?);
             Result::Ok(())
         })
         .await

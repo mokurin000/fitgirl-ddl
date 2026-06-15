@@ -1,7 +1,8 @@
+use http::{Method, Uri};
 use scraper::Selector;
 use tracing::debug;
 
-use crate::NYQUEST_CLIENT;
+use crate::HTTP_CLIENT;
 use crate::errors::ExtractError;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -19,11 +20,11 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         .nth(1)
         .ok_or(ExtractError::FilenameMissing)?
         .to_string();
+    let uri: Uri = url.parse()?;
 
-    let resp = NYQUEST_CLIENT
-        .get()
-        .unwrap()
-        .request(nyquest::Request::get(url.to_string()))
+    let resp = HTTP_CLIENT
+        .request(Method::GET, uri)
+        .send()
         .await
         .map_err(|e| ExtractError::RequestError(e.to_string()))?
         .text()

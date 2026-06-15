@@ -3,7 +3,6 @@ use std::error::Error;
 
 use fitgirl_ddl_lib::errors::ExtractError;
 use fitgirl_ddl_lib::extract::{DDL, extract_ddl};
-use fitgirl_ddl_lib::init_nyquest;
 use fitgirl_ddl_lib::scrape::{GameInfo, scrape_game};
 use futures_util::StreamExt as _;
 use itertools::Itertools;
@@ -23,9 +22,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
-
-    nyquest_preset::register();
-    init_nyquest().await?;
 
     match argh::from_env::<Cli>().command {
         Commands::Search(Search {
