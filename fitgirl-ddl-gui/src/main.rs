@@ -19,8 +19,7 @@ mod ui {
 
 pub mod model;
 
-#[compio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     color_eyre::install()?;
 
     tracing_subscriber::fmt()
