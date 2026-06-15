@@ -63,6 +63,7 @@ impl Component for MainModel {
         }
 
         centralize_window(&mut window)?;
+        window.show()?;
 
         match (async {
             let bytes = compio::fs::read("cookies.json").await?;
