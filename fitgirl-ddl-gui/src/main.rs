@@ -36,6 +36,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     App::builder()
         .name(env!("CARGO_PKG_NAME"))
         .build()?
-        .block_on(async { MainModel::run_until_event(()).await })?;
+        .block_on(MainModel::run_until_event(()))?;
     Ok(())
 }

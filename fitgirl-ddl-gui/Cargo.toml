@@ -20,7 +20,9 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 winio = { version = "0.12.0-rc.4", default-features = false, features = [
     "enable_log",
+    "compio-compat",
 ] }
+compio-compat = { version = "0.1.0-rc.1" }
 color-eyre = "0.6.5"
 
 tracing-subscriber = { version = "0.3.20", default-features = false, features = [
@@ -30,7 +32,7 @@ tracing-subscriber = { version = "0.3.20", default-features = false, features = 
 ] }
 
 [features]
-default = ["gtk", "winui", "dark-mode"]
+default = ["gtk", "win32", "dark-mode"]
 gtk = ["winio/gtk"]
 qt = ["winio/qt"]
 win32 = ["winio/win32"]
