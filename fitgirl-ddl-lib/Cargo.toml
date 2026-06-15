@@ -11,6 +11,7 @@ url = "2.5.4"
 
 scraper = { workspace = true }
 nyquest = { workspace = true }
+tracing = { workspace = true }
 compio = { workspace = true, optional = true }
 
 tokio = { version = "1", default-features = false, features = [

@@ -1,4 +1,5 @@
 use scraper::Selector;
+use tracing::debug;
 
 use crate::NYQUEST_CLIENT;
 use crate::errors::ExtractError;
@@ -54,6 +55,8 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
 
 fn parse_html(document: impl AsRef<str>) -> Result<String, ExtractError> {
     let document = document.as_ref();
+    debug!("parsing document: {document}");
+
     let document = scraper::Html::parse_document(document);
     let selector = Selector::parse("div.mx-auto > script")?;
 
