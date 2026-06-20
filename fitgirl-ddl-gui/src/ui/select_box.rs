@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::sync::atomic::AtomicUsize;
 
 use ahash::AHashMap;
@@ -7,6 +6,7 @@ use itertools::Itertools;
 use tracing::debug;
 use winio::prelude::*;
 
+use crate::Result;
 use crate::utils::{centralize_window, write_aria2_input};
 
 #[derive(Debug)]
@@ -36,10 +36,8 @@ pub enum SelectEvent {
 }
 static SWINDOW_ID: AtomicUsize = AtomicUsize::new(0);
 
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
 impl Component for SelectWindow {
-    type Error = Box<dyn Error>;
+    type Error = color_eyre::Report;
     type Init<'a> = (AHashMap<String, Vec<DDL>>, String);
     type Message = SelectMessage;
     type Event = SelectEvent;

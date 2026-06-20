@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::error::Error;
 use std::fmt::Write;
 
 use fitgirl_ddl_lib::extract::DDL;
@@ -11,11 +10,10 @@ use tracing::{debug, error, info, warn};
 use compio::runtime::spawn;
 use winio::prelude::*;
 
+use crate::Result;
 use crate::model::Cookie;
 use crate::ui::select_box::{SelectEvent, SelectWindow};
 use crate::utils::{ExtractionInfo, centralize_window, collect_groups, export_ddl};
-
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[allow(unused)]
 pub(crate) struct MainModel {
@@ -41,7 +39,7 @@ pub(crate) enum MainMessage {
 }
 
 impl Component for MainModel {
-    type Error = Box<dyn Error>;
+    type Error = color_eyre::Report;
     type Event = ();
     type Init<'a> = ();
     type Message = MainMessage;

@@ -1,7 +1,6 @@
 #![allow(unreachable_code)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::error::Error;
 use std::fs::OpenOptions;
 
 use tracing_subscriber::EnvFilter;
@@ -12,6 +11,8 @@ use crate::ui::main_model::MainModel;
 
 mod utils;
 
+type Result<T> = std::result::Result<T, color_eyre::Report>;
+
 mod ui {
     pub mod main_model;
     pub mod select_box;
@@ -19,7 +20,7 @@ mod ui {
 
 pub mod model;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     color_eyre::install()?;
 
     tracing_subscriber::fmt()
