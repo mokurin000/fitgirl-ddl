@@ -62,7 +62,9 @@ impl Component for MainModel {
             },
         }
 
-        centralize_window(&mut window)?;
+        if let Err(e) = centralize_window(&mut window) {
+            error!("Cannot centralize main window: {e}");
+        };
         window.show()?;
 
         match (async {
@@ -84,8 +86,6 @@ impl Component for MainModel {
                 error!("failed to load cookies: {e}");
             }
         }
-
-        window.show()?;
 
         Ok(Self {
             window,
