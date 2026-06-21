@@ -8,7 +8,7 @@ codegen-units = 1
 panic = "unwind"
 opt-level = "s"
 strip = "symbols"
-debug = "full"
+debug = "limited"
 split-debuginfo = "packed"
 
 [workspace.dependencies]

@@ -67,7 +67,7 @@ jobs:
             ${target_dir}/${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
             ${target_dir}/${{ matrix.dbginfo }} \
             .
-          tar -cvzf ${{ matrix.target }}.tar.gz \
+          tar -chvzf ${{ matrix.target }}.tar.gz \
             LICENSE README.md \
             ${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
             ${{ matrix.dbginfo }}
