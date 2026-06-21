@@ -63,7 +63,11 @@ jobs:
       - name: Prepare assets
         shell: bash
         run: |
-          mv target/${{ matrix.target }}/release/${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} .
+          target_dir=target/${{ matrix.target }}/release
+          mv \
+            ${target_dir}/${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
+            ${target_dir}/${{ env.RUST_DBG_NAME }}${{ matrix.dbginfo }} \
+            .
           tar -cvzf ${{ matrix.target }}.tar.gz \
             LICENSE README.md \
             ${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
