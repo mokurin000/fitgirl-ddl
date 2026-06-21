@@ -2,7 +2,7 @@ name: Build Releases
 on:
   push:
     tags:
-      - '*'
+      - "*"
 permissions:
   contents: write
 jobs:
@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Create Draft Release
         id: create-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           prerelease: false
@@ -48,7 +48,7 @@ jobs:
             dbginfo: .pdb
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: ${{ matrix.target }}
@@ -68,7 +68,7 @@ jobs:
             ${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
             ${{ env.RUST_BIN_NAME }}${{ matrix.dbginfo }}
       - name: Upload to Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ matrix.target }}.tar.gz
           tag_name: ${{ github.ref_name }}
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           draft: false
