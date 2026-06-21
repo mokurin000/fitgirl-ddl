@@ -1,4 +1,4 @@
-#![allow(unreachable_code)]
+#![allow(dead_code)] // mute rust-analyzer false-positive
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::fs::OpenOptions;
