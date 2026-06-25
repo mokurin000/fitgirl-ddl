@@ -3,15 +3,15 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ScrapeError {
-    #[error("IP was banned by ddos-guard!")]
+    #[error("IP 被 ddos-guard 风控")]
     DDoSGuarded,
-    #[error("fuckingfast.co source was missing")]
+    #[error("无 fuckingfast 下载源")]
     FuckingFastSourceMissing,
-    #[error("ill-formed uri: {0}")]
+    #[error("URL 格式错误: {0}")]
     IllFormedURI(#[from] http::uri::InvalidUri),
-    #[error("expected link to single game description")]
+    #[error("请提供单个游戏的 URL")]
     UnexpectedURL,
-    #[error("request: {0}")]
+    #[error("请求错误: {0}")]
     RequestError(String),
     #[error("join error")]
     JoinError,
