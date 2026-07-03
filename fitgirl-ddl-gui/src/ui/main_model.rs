@@ -16,7 +16,7 @@ use crate::ui::select_box::{SelectEvent, SelectWindow};
 use crate::utils::{ExtractionInfo, centralize_window, collect_groups, export_ddl};
 
 #[allow(unused)]
-pub(crate) struct MainModel {
+pub struct MainModel {
     window: Child<Window>,
     selective_boxes: BTreeMap<usize, Child<SelectWindow>>,
     button: Child<Button>,
@@ -26,7 +26,7 @@ pub(crate) struct MainModel {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum MainMessage {
+pub enum MainMessage {
     Noop,
     Close,
     Redraw,

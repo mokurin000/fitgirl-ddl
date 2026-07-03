@@ -7,18 +7,8 @@ use tracing_subscriber::EnvFilter;
 use winio::prelude::App;
 use winio::ui::ComponentExt;
 
-use crate::ui::main_model::MainModel;
-
-mod utils;
-
-type Result<T> = std::result::Result<T, color_eyre::Report>;
-
-mod ui {
-    pub mod main_model;
-    pub mod select_box;
-}
-
-pub mod model;
+use fitgirl_ddl_gui::Result;
+use fitgirl_ddl_gui::ui::main_model::MainModel;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
