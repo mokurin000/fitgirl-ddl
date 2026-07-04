@@ -33,8 +33,6 @@ pub enum ExtractError {
     DDLMissing,
     #[error("request: {0}")]
     RequestError(String),
-    #[error("invalid css selector")]
-    InvalidCSSSelector,
     #[error("ill-formed uri: {0}")]
     IllFormedURI(#[from] http::uri::InvalidUri),
     #[error("join error")]
@@ -43,10 +41,4 @@ pub enum ExtractError {
     RateLimited,
     #[error("file was deleted")]
     FileNotFound(String),
-}
-
-impl From<SelectorErrorKind<'_>> for ExtractError {
-    fn from(_: SelectorErrorKind<'_>) -> Self {
-        Self::InvalidCSSSelector
-    }
 }

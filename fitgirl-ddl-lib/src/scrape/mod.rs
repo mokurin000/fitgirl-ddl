@@ -1,6 +1,11 @@
 use scraper::Selector;
 use wreq::{Method, Uri};
 
+#[cfg(feature = "compio")]
+use compio::runtime::spawn_blocking;
+#[cfg(feature = "tokio")]
+use tokio::task::spawn_blocking;
+
 use crate::errors::ScrapeError;
 use crate::{FITGIRL_COOKIES, HTTP_CLIENT};
 
@@ -40,12 +45,7 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
         .await
         .map_err(|e| ScrapeError::RequestError(e.to_string()))?;
 
-    #[cfg(feature = "compio")]
-    let spawn = compio::runtime::spawn_blocking;
-    #[cfg(feature = "tokio")]
-    let spawn = tokio::task::spawn_blocking;
-
-    let fuckingfast_links = spawn(move || parse_html(document))
+    let fuckingfast_links = spawn_blocking(move || parse_html(document))
         .await
         .map_err(|_| ScrapeError::JoinError)??;
 

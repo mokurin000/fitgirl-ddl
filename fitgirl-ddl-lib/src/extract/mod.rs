@@ -1,11 +1,4 @@
-use http::{Method, Uri};
-use scraper::Selector;
-use tracing::debug;
-
-#[cfg(feature = "compio")]
-use compio::runtime::spawn_blocking;
-#[cfg(feature = "tokio")]
-use tokio::task::spawn_blocking;
+use http::{HeaderValue, Method, Uri};
 
 use crate::HTTP_CLIENT;
 use crate::errors::ExtractError;
@@ -27,8 +20,9 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         .to_string();
     let uri: Uri = url.parse()?;
 
+    // Step 1: GET request to bypass Cloudflare and establish session
     let resp = HTTP_CLIENT
-        .request(Method::GET, uri)
+        .request(Method::GET, uri.clone())
         .send()
         .await
         .map_err(|e| ExtractError::RequestError(e.to_string()))?
@@ -44,37 +38,40 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         return Err(ExtractError::FileNotFound(filename));
     }
 
-    let direct_link = spawn_blocking(move || parse_html(resp))
+    // Step 2 & 3: Extract file ID and POST to download endpoint
+    let file_id = uri.path().trim_start_matches('/');
+    let post_uri: Uri = format!("https://fuckingfast.co/f/{file_id}/go").parse()?;
+
+    let mut req = wreq::Request::new(Method::POST, post_uri);
+    req.headers_mut()
+        .insert("HX-Request", HeaderValue::from_static("true"));
+    req.headers_mut().insert(
+        "HX-Current-URL",
+        HeaderValue::from_str(url).map_err(|e| ExtractError::RequestError(e.to_string()))?,
+    );
+    req.headers_mut()
+        .insert("Origin", HeaderValue::from_static("https://fuckingfast.co"));
+    req.headers_mut().insert(
+        "Content-Type",
+        HeaderValue::from_static("application/x-www-form-urlencoded"),
+    );
+
+    let post_resp = HTTP_CLIENT
+        .execute(req)
         .await
-        .map_err(|_| ExtractError::JoinError)??;
+        .map_err(|e| ExtractError::RequestError(e.to_string()))?;
+
+    // Step 4: Read HX-Redirect header
+    let direct_link = post_resp
+        .headers()
+        .get("HX-Redirect")
+        .ok_or(ExtractError::DDLMissing)?
+        .to_str()
+        .map_err(|_| ExtractError::DDLMissing)?
+        .to_string();
 
     Ok(DDL {
         filename,
         direct_link,
     })
-}
-
-fn parse_html(document: impl AsRef<str>) -> Result<String, ExtractError> {
-    let document = document.as_ref();
-    debug!("parsing document: {document}");
-
-    let document = scraper::Html::parse_document(document);
-    let selector = Selector::parse("div.mx-auto > script")?;
-
-    let script_tag = document
-        .select(&selector)
-        .next()
-        .ok_or(ExtractError::DDLMissing)?;
-
-    let script = script_tag.text().next().ok_or(ExtractError::DDLMissing)?;
-
-    let (_, latter) = script
-        .split_once("window.open(\"")
-        .ok_or(ExtractError::DDLMissing)?;
-
-    Ok(latter
-        .split_once("\"")
-        .ok_or(ExtractError::DDLMissing)?
-        .0
-        .to_string())
 }
