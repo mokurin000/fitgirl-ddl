@@ -2,6 +2,11 @@ use http::{Method, Uri};
 use scraper::Selector;
 use tracing::debug;
 
+#[cfg(feature = "compio")]
+use compio::runtime::spawn_blocking;
+#[cfg(feature = "tokio")]
+use tokio::task::spawn_blocking;
+
 use crate::HTTP_CLIENT;
 use crate::errors::ExtractError;
 
@@ -39,12 +44,7 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         return Err(ExtractError::FileNotFound(filename));
     }
 
-    #[cfg(feature = "compio")]
-    let direct_link = compio::runtime::spawn_blocking(move || parse_html(resp))
-        .await
-        .map_err(|_| ExtractError::JoinError)??;
-    #[cfg(feature = "tokio")]
-    let direct_link = tokio::task::spawn_blocking(move || parse_html(resp))
+    let direct_link = spawn_blocking(move || parse_html(resp))
         .await
         .map_err(|_| ExtractError::JoinError)??;
 
