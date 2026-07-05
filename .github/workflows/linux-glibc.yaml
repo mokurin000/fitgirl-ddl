@@ -25,7 +25,6 @@ jobs:
         with:
           toolchain: nightly-2026-07-02
           targets: ${{ matrix.target }}
-          components: rust-src
 
       - name: Install Qt6
         run: |

@@ -30,7 +30,6 @@ jobs:
         with:
           toolchain: nightly-2026-07-02
           targets: ${{ matrix.target }}
-          components: rust-src
 
       - uses: Swatinem/rust-cache@v2
         with:
