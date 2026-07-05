@@ -39,8 +39,59 @@ jobs:
         with:
           path: artifacts
 
+      - name: Generate release notes
+        shell: bash
+        run: |
+          generate_table() {
+            local prefix="$1"
+            local label="$2"
+
+            echo "## $label"
+            echo ""
+            echo "| Architecture | Linux | macOS | Windows 10 | Windows 11 |"
+            echo "|--------------|-------|-------|------------|------------|"
+
+            declare -A row_x86
+            declare -A row_arm
+
+            for file in artifacts/$prefix-*/*; do
+              [ -f "$file" ] || continue
+              fname="$(basename "$file")"
+              stem="${fname#$prefix-}"
+              stem="${stem%.exe}"
+              os="${stem%%-*}"
+              arch="${stem#*-}"
+
+              url="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$fname"
+              link="[Download]($url)"
+
+              col=""
+              case "$os" in
+                linux) col="Linux" ;;
+                macos) col="macOS" ;;
+                win10) col="Windows 10" ;;
+                win11) col="Windows 11" ;;
+              esac
+
+              case "$arch" in
+                x86_64) row_x86["$col"]="$link" ;;
+                arm64)  row_arm["$col"]="$link" ;;
+              esac
+            done
+
+            echo "| x86_64 | ${row_x86[Linux]:--} | ${row_x86[macOS]:--} | ${row_x86[Windows 10]:--} | ${row_x86[Windows 11]:--} |"
+            echo "| arm64  | ${row_arm[Linux]:--} | ${row_arm[macOS]:--} | ${row_arm[Windows 10]:--} | ${row_arm[Windows 11]:--} |"
+            echo ""
+          }
+
+          {
+            generate_table "fitgirl-ddl" "CLI"
+            generate_table "fitgirl-ddl_gui" "GUI"
+          } > "${{ github.workspace }}-Release.md"
+
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           files: artifacts/**/*
+          body_path: ${{ github.workspace }}-Release.md
           prerelease: false
