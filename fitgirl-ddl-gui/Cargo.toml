@@ -33,9 +33,9 @@ tracing-subscriber = { version = "0.3.20", default-features = false, features = 
 ] }
 
 [features]
-default = ["gtk", "winui"]
+default = ["qt", "winui"]
 
-gtk = ["winio/gtk"]
 qt = ["winio/qt"]
+gtk = ["winio/gtk"]
 win32 = ["winio/win32"]
 winui = ["winio/winui"]
