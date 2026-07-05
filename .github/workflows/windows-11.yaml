@@ -36,6 +36,7 @@ jobs:
           shared-key: ${{ matrix.artifact }}
 
       - name: Install NASM
+        if: contains(matrix.target, 'x86_64')
         shell: pwsh
         run: |
           choco install nasm -y --no-progress
