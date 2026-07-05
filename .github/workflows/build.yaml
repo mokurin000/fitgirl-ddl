@@ -1,87 +1,46 @@
-name: Build Releases
+name: publish-release
+
 on:
   push:
     tags:
-      - "*"
+      - v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
-jobs:
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Create Draft Release
-        id: create-release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          prerelease: false
-          make_latest: true
-          draft: true
-  build-and-upload:
-    name: Build and Upload for ${{ matrix.target }}
-    needs: create-release
-    runs-on: ${{ matrix.os }}
-    env:
-      RUST_BIN_NAME: "fitgirl-ddl{,_gui}"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            suffix: ""
-            dbginfo: "fitgirl-ddl{,_gui}.dSYM"
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            suffix: ""
-            dbginfo: "fitgirl-ddl{,_gui}.dSYM"
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            suffix: .exe
-            dbginfo: "fitgirl_ddl{,_gui}.pdb"
-          - target: aarch64-pc-windows-msvc
-            os: windows-latest
-            suffix: .exe
-            dbginfo: "fitgirl_ddl{,_gui}.pdb"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: ${{ matrix.target }}
-      - name: Build binary
-        uses: houseabsolute/actions-rust-cross@v0
-        with:
-          target: ${{ matrix.target }}
-          args: "--locked --release"
-          strip: true
-      - name: Prepare assets
-        shell: bash
-        run: |
-          target_dir=target/${{ matrix.target }}/release
-          mv ${target_dir}/${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} .
 
-          tar --dereference -cvzf ${{ matrix.target }}.tar.gz \
-            LICENSE README.md \
-            ${{ env.RUST_BIN_NAME }}${{ matrix.suffix }} \
-            ${target_dir}/${{ matrix.dbginfo }}
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: ${{ matrix.target }}.tar.gz
-          tag_name: ${{ github.ref_name }}
-  publish-release:
-    name: Publish Release
+jobs:
+  windows-10:
+    uses: ./.github/workflows/windows-10.yaml
+
+  windows-11:
+    uses: ./.github/workflows/windows-11.yaml
+
+  macos:
+    uses: ./.github/workflows/macos.yaml
+
+  linux-glibc:
+    uses: ./.github/workflows/linux-glibc.yaml
+
+  release:
     needs:
-      - create-release
-      - build-and-upload
-    runs-on: ubuntu-latest
+      - windows-10
+      - windows-11
+      - macos
+      - linux-glibc
+
+    runs-on: ubuntu-24.04
+
     steps:
-      - name: Publish Release
-        uses: softprops/action-gh-release@v3
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
-          draft: false
+          files: artifacts/**/*
+          prerelease: false

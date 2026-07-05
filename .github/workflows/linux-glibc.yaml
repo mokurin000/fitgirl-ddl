@@ -1,0 +1,72 @@
+name: build-linux-glibc
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - artifact: linux-x86_64
+            target: x86_64-unknown-linux-gnu
+
+    name: ${{ matrix.artifact }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: ${{ matrix.target }}
+          components: rust-src
+
+      - name: Install Qt6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.artifact }}
+
+      - name: Install zig
+        uses: mlugg/setup-zig@v2
+
+      # zig for glibc baseline
+      - name: Install zigbuild
+        run: |
+          curl -LO \
+            https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-x86_64-unknown-linux-gnu.tar.xz
+          tar xf cargo-zigbuild-x86_64-unknown-linux-gnu.tar.xz
+          mv cargo-zigbuild-x86_64-unknown-linux-gnu/cargo-zigbuild ~/.cargo/bin/
+          rm -rf cargo-zigbuild-x86_64-unknown-linux-gnu*
+
+      - name: Build
+        shell: bash
+        env:
+          CARGO_ZIGBUILD_TARGET: x86_64-unknown-linux-gnu.2.31
+          CXXFLAGS: "-flto"
+          RUSTFLAGS: "-Clink-arg=-flto"
+        run: |
+          cargo zigbuild \
+            --release \
+            --target ${{ matrix.target }}
+
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir dist
+          for bin in fitgirl-ddl fitgirl-ddl_gui; do
+            cp "target/${{ matrix.target }}/release/${bin}" "dist/${bin}-${{ matrix.artifact }}"
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*

@@ -1,0 +1,58 @@
+name: build-windows-10
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - artifact: win10-x86_64.exe
+            runner: windows-2022
+            target: x86_64-pc-windows-msvc
+
+          - artifact: win10-arm64.exe
+            runner: windows-2022
+            target: aarch64-pc-windows-msvc
+
+    name: ${{ matrix.artifact }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: ${{ matrix.target }}
+          components: rust-src
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.artifact }}
+
+      - name: Build
+        shell: bash
+        run: |
+          cargo build \
+            --no-default-features \
+            -F win32 \
+            --release \
+            --target ${{ matrix.target }}
+
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir dist
+          for bin in fitgirl-ddl fitgirl-ddl_gui; do
+            cp "target/${{ matrix.target }}/release/${bin}.exe" "dist/${bin}-${{ matrix.artifact }}"
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
