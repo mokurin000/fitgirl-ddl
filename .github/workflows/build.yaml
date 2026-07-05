@@ -40,54 +40,64 @@ jobs:
           path: artifacts
 
       - name: Generate release notes
-        shell: bash
+        shell: python
         run: |
-          generate_table() {
-            local prefix="$1"
-            local label="$2"
+          import os
 
-            echo "## $label"
-            echo ""
-            echo "| Architecture | Linux | macOS | Windows 10 | Windows 11 |"
-            echo "|--------------|-------|-------|------------|------------|"
+          tag = "${{ github.ref_name }}"
+          repo = "${{ github.repository }}"
 
-            declare -A row_x86
-            declare -A row_arm
-
-            for file in artifacts/$prefix-*/*; do
-              [ -f "$file" ] || continue
-              fname="$(basename "$file")"
-              stem="${fname#$prefix-}"
-              stem="${stem%.exe}"
-              os="${stem%%-*}"
-              arch="${stem#*-}"
-
-              url="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$fname"
-              link="[Download]($url)"
-
-              col=""
-              case "$os" in
-                linux) col="Linux" ;;
-                macos) col="macOS" ;;
-                win10) col="Windows 10" ;;
-                win11) col="Windows 11" ;;
-              esac
-
-              case "$arch" in
-                x86_64) row_x86["$col"]="$link" ;;
-                arm64)  row_arm["$col"]="$link" ;;
-              esac
-            done
-
-            echo "| x86_64 | ${row_x86[Linux]:--} | ${row_x86[macOS]:--} | ${row_x86[Windows 10]:--} | ${row_x86[Windows 11]:--} |"
-            echo "| arm64  | ${row_arm[Linux]:--} | ${row_arm[macOS]:--} | ${row_arm[Windows 10]:--} | ${row_arm[Windows 11]:--} |"
-            echo ""
+          FILES = {
+              "CLI": [
+                  "fitgirl-ddl-linux-x86_64",
+                  "fitgirl-ddl-macos-arm64",
+                  "fitgirl-ddl-macos-x86_64",
+                  "fitgirl-ddl-win10-arm64.exe",
+                  "fitgirl-ddl-win10-x86_64.exe",
+                  "fitgirl-ddl-win11-arm64.exe",
+                  "fitgirl-ddl-win11-x86_64.exe",
+              ],
+              "GUI": [
+                  "fitgirl-ddl_gui-linux-x86_64",
+                  "fitgirl-ddl_gui-macos-arm64",
+                  "fitgirl-ddl_gui-macos-x86_64",
+                  "fitgirl-ddl_gui-win10-arm64.exe",
+                  "fitgirl-ddl_gui-win10-x86_64.exe",
+                  "fitgirl-ddl_gui-win11-arm64.exe",
+                  "fitgirl-ddl_gui-win11-x86_64.exe",
+              ],
           }
 
-          {
-            generate_table "fitgirl-ddl" "CLI"
-            generate_table "fitgirl-ddl_gui" "GUI"
-          } > "${{ github.workspace }}-Release.md"
+          OS_MAP = {"linux": "Linux", "macos": "macOS", "win10": "Windows 10", "win11": "Windows 11"}
+
+          def generate_table(prefix, label):
+              row_x86 = {}
+              row_arm = {}
+
+              for fname in FILES[label]:
+                  stem = fname.removeprefix(prefix + "-").removesuffix(".exe")
+                  os_key, arch = stem.rsplit("-", 1)
+                  col = OS_MAP[os_key]
+                  url = f"https://github.com/{repo}/releases/download/{tag}/{fname}"
+                  link = f"[Download]({url})"
+                  if arch == "x86_64":
+                      row_x86[col] = link
+                  elif arch == "arm64":
+                      row_arm[col] = link
+
+              print(f"## {label}")
+              print()
+              print("| Architecture | Linux | macOS | Windows 10 | Windows 11 |")
+              print("|--------------|-------|-------|------------|------------|")
+              print(f"| x86_64 | {row_x86.get('Linux', '-')} | {row_x86.get('macOS', '-')} | {row_x86.get('Windows 10', '-')} | {row_x86.get('Windows 11', '-')} |")
+              print(f"| arm64  | {row_arm.get('Linux', '-')} | {row_arm.get('macOS', '-')} | {row_arm.get('Windows 10', '-')} | {row_arm.get('Windows 11', '-')} |")
+              print()
+
+          from contextlib import redirect_stdout
+          with open(os.environ["GITHUB_WORKSPACE"] + "-Release.md", "w") as f:
+              with redirect_stdout(f):
+                  generate_table("fitgirl-ddl", "CLI")
+                  generate_table("fitgirl-ddl_gui", "GUI")
 
       - uses: softprops/action-gh-release@v3
         with:
