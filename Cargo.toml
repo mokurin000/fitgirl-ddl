@@ -1,6 +1,9 @@
 [workspace]
 members = ["fitgirl-ddl-cli", "fitgirl-ddl-gui", "fitgirl-ddl-lib"]
-resolver = "2"
+resolver = "3"
+
+[patch.crates-io]
+btls-sys = { git = "https://github.com/mokurin000/btls", branch = "build/enable-clang-assembler" }
 
 [profile.release]
 lto = true
