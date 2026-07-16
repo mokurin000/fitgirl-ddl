@@ -6,8 +6,6 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-
     strategy:
       fail-fast: false
 
@@ -15,8 +13,13 @@ jobs:
         include:
           - artifact: linux-x86_64
             target: x86_64-unknown-linux-gnu
+            runner: ubuntu-24.04
+          - artifact: linux-arm64
+            target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm64
 
     name: ${{ matrix.artifact }}
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - uses: actions/checkout@v6
@@ -41,22 +44,28 @@ jobs:
       # zig for glibc baseline
       - name: Install zigbuild
         run: |
-          curl -LO \
-            https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-x86_64-unknown-linux-gnu.tar.xz
-          tar xf cargo-zigbuild-x86_64-unknown-linux-gnu.tar.xz
-          mv cargo-zigbuild-x86_64-unknown-linux-gnu/cargo-zigbuild ~/.cargo/bin/
-          rm -rf cargo-zigbuild-x86_64-unknown-linux-gnu*
+          ARCH=$(uname -m)
+
+          echo "📦 Installing cargo-zigbuild for $ARCH..."
+
+          # 下载并安装
+          curl -LO "https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-${ARCH}-unknown-linux-gnu.tar.xz"
+          tar xf "cargo-zigbuild-${ARCH}-unknown-linux-gnu.tar.xz"
+          mkdir -p ~/.cargo/bin
+          mv "cargo-zigbuild-${ARCH}-unknown-linux-gnu/cargo-zigbuild" ~/.cargo/bin/
+          rm -rf "cargo-zigbuild-${ARCH}-unknown-linux-gnu"*
+
+          echo "✅ Installed to ~/.cargo/bin/cargo-zigbuild"
 
       - name: Build
         shell: bash
         env:
-          CARGO_ZIGBUILD_TARGET: x86_64-unknown-linux-gnu.2.31
           CXXFLAGS: "-flto"
           RUSTFLAGS: "-Clink-arg=-flto"
         run: |
           cargo zigbuild \
             --release \
-            --target ${{ matrix.target }}
+            --target ${{ matrix.target }}.2.31
 
       - name: Collect
         shell: bash
