@@ -75,7 +75,7 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
     };
 
     let fuckingfast_links_selector = Selector::parse(
-        "div.entry-content > ul > li:nth-child(2) > div.su-spoiler > div.su-spoiler-content",
+        "div.entry-content ul > li:nth-child(2) > div.su-spoiler > div.su-spoiler-content",
     )?;
 
     let spoiler_content = document
