@@ -58,28 +58,21 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
 fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
     let document = document.as_ref();
     let document = scraper::Html::parse_document(document);
-    let selector = Selector::parse("div.entry-content > ul > li > a")?;
 
-    let tags = document
-        .select(&selector)
-        .filter(|tag| {
-            tag.text()
-                .next()
-                .is_some_and(|t| t == "Filehoster: FuckingFast")
-        })
-        .collect::<Vec<_>>();
+    let file_hoster = Selector::parse("div.entry-content ul > li:nth-child(2) > a")?;
+    let tags = document.select(&file_hoster).collect::<Vec<_>>();
 
     let single_tag = match tags.len() {
         0 => return Err(ScrapeError::FuckingFastSourceMissing)?,
         _ => tags[0],
     };
 
-    let fuckingfast_links_selector = Selector::parse(
+    let file_hoster_spolier = Selector::parse(
         "div.entry-content ul > li:nth-child(2) > div.su-spoiler > div.su-spoiler-content",
     )?;
 
     let spoiler_content = document
-        .select(&fuckingfast_links_selector)
+        .select(&file_hoster_spolier)
         .collect::<Vec<_>>();
     match &*spoiler_content {
         &[] => Ok(vec![
