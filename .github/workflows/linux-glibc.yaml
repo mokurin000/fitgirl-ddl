@@ -40,10 +40,6 @@ jobs:
 
       - name: Build
         shell: bash
-        env:
-          CFLAGS: "-flto=full"
-          CXXFLAGS: "-flto=full"
-          RUSTFLAGS: "-Clinker-plugin-lto -Clto=fat -Clinker=clang -Clink-arg=-fuse-ld=lld"
         run: |
           cargo build \
             --release \
