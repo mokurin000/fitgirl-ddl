@@ -38,34 +38,15 @@ jobs:
         with:
           shared-key: ${{ matrix.artifact }}
 
-      - name: Install zig
-        uses: mlugg/setup-zig@v2
-
-      # zig for glibc baseline
-      - name: Install zigbuild
-        run: |
-          ARCH=$(uname -m)
-
-          echo "📦 Installing cargo-zigbuild for $ARCH..."
-
-          # 下载并安装
-          curl -LO "https://github.com/rust-cross/cargo-zigbuild/releases/latest/download/cargo-zigbuild-${ARCH}-unknown-linux-gnu.tar.xz"
-          tar xf "cargo-zigbuild-${ARCH}-unknown-linux-gnu.tar.xz"
-          mkdir -p ~/.cargo/bin
-          mv "cargo-zigbuild-${ARCH}-unknown-linux-gnu/cargo-zigbuild" ~/.cargo/bin/
-          rm -rf "cargo-zigbuild-${ARCH}-unknown-linux-gnu"*
-
-          echo "✅ Installed to ~/.cargo/bin/cargo-zigbuild"
-
       - name: Build
         shell: bash
         env:
           CXXFLAGS: "-flto"
           RUSTFLAGS: "-Clink-arg=-flto"
         run: |
-          cargo zigbuild \
+          cargo build \
             --release \
-            --target ${{ matrix.target }}.2.31
+            --target ${{ matrix.target }}
 
       - name: Collect
         shell: bash
