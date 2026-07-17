@@ -50,6 +50,7 @@ jobs:
           FILES = {
               "CLI": [
                   "fitgirl-ddl-linux-x86_64",
+                  "fitgirl-ddl-linux-arm64",
                   "fitgirl-ddl-macos-arm64",
                   "fitgirl-ddl-macos-x86_64",
                   "fitgirl-ddl-win10-arm64.exe",
@@ -59,6 +60,7 @@ jobs:
               ],
               "GUI": [
                   "fitgirl-ddl_gui-linux-x86_64",
+                  "fitgirl-ddl_gui-linux-arm64",
                   "fitgirl-ddl_gui-macos-arm64",
                   "fitgirl-ddl_gui-macos-x86_64",
                   "fitgirl-ddl_gui-win10-arm64.exe",
