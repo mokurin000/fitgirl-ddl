@@ -73,7 +73,7 @@ pub async fn export_ddl(
 
         info!("start extracting for {path_part}");
 
-        if fuckingfast_links.len() >= 200 {
+        if fuckingfast_links.len() >= 100 {
             info!("limiting workers due to too lots of DDL");
             workers = 1;
         }
