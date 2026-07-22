@@ -109,7 +109,7 @@ pub async fn export_ddl(
             }
         }
 
-        write_aria2_input(&results, &output_file).await;
+        write_aria2_input(&results, &output_file, &path_part).await;
 
         if selective {
             sender.post(MainMessage::CreateSelection(results, path_part));
@@ -129,6 +129,7 @@ pub async fn export_ddl(
 pub async fn write_aria2_input(
     ddls: impl IntoIterator<Item = &DDL>,
     output_file: impl AsRef<Path>,
+    path_part: &str,
 ) {
     let output_string: String = ddls
         .into_iter()
@@ -142,7 +143,7 @@ pub async fn write_aria2_input(
             }| {
                 format!(
 "{direct_link}
-    out={filename}
+    out={path_part}/{filename}
     continue=true
 "
                 )

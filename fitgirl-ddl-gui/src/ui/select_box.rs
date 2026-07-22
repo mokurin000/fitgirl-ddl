@@ -144,7 +144,7 @@ impl Component for SelectWindow {
                     .flatten()
                     .collect();
 
-                write_aria2_input(ddls, format!("{}.txt", self.game_name)).await;
+                write_aria2_input(ddls, format!("{}.txt", self.game_name), &self.game_name).await;
                 Ok(false)
             }
         }
