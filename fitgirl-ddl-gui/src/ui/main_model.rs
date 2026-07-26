@@ -180,10 +180,9 @@ impl Component for MainModel {
 
                 spawn(async move {
                     let urls = text.split([' ', '\n', '\t']).filter(|s| !s.is_empty());
-                    let export = export_ddl(urls, 2, &sender, selective);
+                    let export = export_ddl(urls, 2, &sender, selective).await;
 
-                    let (export_result, ..) = futures_util::join!(export);
-                    match export_result {
+                    match export {
                         Err(e) => {
                             popup_message(
                                 (),
