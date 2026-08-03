@@ -1,4 +1,6 @@
+use http::header::{CONTENT_TYPE, ORIGIN};
 use http::{HeaderValue, Method, Uri};
+use tracing::debug;
 
 use crate::HTTP_CLIENT;
 use crate::errors::ExtractError;
@@ -50,9 +52,9 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         HeaderValue::from_str(url).map_err(|e| ExtractError::RequestError(e.to_string()))?,
     );
     req.headers_mut()
-        .insert("Origin", HeaderValue::from_static("https://fuckingfast.co"));
+        .insert(ORIGIN, HeaderValue::from_static("https://fuckingfast.co"));
     req.headers_mut().insert(
-        "Content-Type",
+        CONTENT_TYPE,
         HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
 
@@ -61,10 +63,11 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         .await
         .map_err(|e| ExtractError::RequestError(e.to_string()))?;
 
+    let hx_redirect = post_resp.headers().get("HX-Redirect").cloned();
+    debug!("Response: {:?}", post_resp.bytes().await);
+
     // Step 4: Read HX-Redirect header
-    let direct_link = post_resp
-        .headers()
-        .get("HX-Redirect")
+    let direct_link = hx_redirect
         .ok_or(ExtractError::DDLMissing)?
         .to_str()
         .map_err(|_| ExtractError::DDLMissing)?
