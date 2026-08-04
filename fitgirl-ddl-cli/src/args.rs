@@ -57,6 +57,11 @@ pub struct Fetch {
     #[argh(option, default = "PathBuf::from(\".\")")]
     pub save_dir: PathBuf,
 
+    /// cookies for fuckingfast.co, in header value format.
+    /// for example, "cf_clearance=...; dlpass=..."
+    #[argh(option)]
+    pub cookies: String,
+
     /// url of the game, format is like:
     ///
     /// https://fitgirl-repacks.site/the-bards-tale-iv-directors-cut/

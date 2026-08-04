@@ -17,7 +17,6 @@ pub static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| {
         .unwrap()
 });
 pub static FITGIRL_COOKIES: OnceLock<HeaderValue> = OnceLock::new();
-pub static FUCKINGFAST_COOKIES: OnceLock<HeaderValue> = OnceLock::new();
 
 /// Accepts cookies in form like `name1=value1; name=value2; ...`,
 /// Also see [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cookie).
@@ -25,9 +24,4 @@ pub static FUCKINGFAST_COOKIES: OnceLock<HeaderValue> = OnceLock::new();
 /// Once cookies for fitgirl was initialized, this function returns Err(cookies)
 pub fn set_fg_cookies(cookies: impl Into<HeaderValue>) -> Result<(), HeaderValue> {
     FITGIRL_COOKIES.set(cookies.into())
-}
-
-/// Similar with [`set_fg_cookies`] but for `fuckingfast.co`.
-pub fn set_ff_cookies(cookies: impl Into<HeaderValue>) -> Result<(), HeaderValue> {
-    FUCKINGFAST_COOKIES.set(cookies.into())
 }

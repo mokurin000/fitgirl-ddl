@@ -4,6 +4,7 @@ version = "0.5.3"
 edition = "2024"
 license = "MIT"
 description = "extract DDL from fitgirl-repacks.site"
+repository = "https://github.com/mokurin000/fitgirl-ddl"
 
 [dependencies]
 thiserror = "2.0.12"

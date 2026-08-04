@@ -2,8 +2,8 @@ use http::header::{CONTENT_TYPE, COOKIE, ORIGIN};
 use http::{HeaderValue, Method, Uri};
 use tracing::debug;
 
+use crate::HTTP_CLIENT;
 use crate::errors::ExtractError;
-use crate::{FUCKINGFAST_COOKIES, HTTP_CLIENT};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -12,7 +12,7 @@ pub struct DDL {
     pub direct_link: String,
 }
 
-pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
+pub async fn extract_ddl(url: impl AsRef<str>, cookies: &str) -> Result<DDL, ExtractError> {
     let url = url.as_ref();
 
     let filename = url
@@ -21,10 +21,6 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         .ok_or(ExtractError::FilenameMissing)?
         .to_string();
     let uri: Uri = url.parse()?;
-
-    let Some(cookies) = FUCKINGFAST_COOKIES.get() else {
-        return Err(ExtractError::CookiesMissing);
-    };
 
     // Step 1: GET request to check file status
     let resp = HTTP_CLIENT
@@ -61,7 +57,8 @@ pub async fn extract_ddl(url: impl AsRef<str>) -> Result<DDL, ExtractError> {
         CONTENT_TYPE,
         HeaderValue::from_static("application/x-www-form-urlencoded"),
     );
-    req.headers_mut().insert(COOKIE, cookies.clone());
+    req.headers_mut()
+        .insert(COOKIE, HeaderValue::from_str(cookies)?);
 
     let post_resp = HTTP_CLIENT
         .execute(req)

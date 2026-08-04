@@ -82,7 +82,7 @@ pub async fn export_ddl(
             .map(|ff_url| {
                 info!("processing {ff_url}");
                 async move {
-                    let result = extract_ddl(&ff_url).await.inspect_err(|e| {
+                    let result = extract_ddl(&ff_url, "").await.inspect_err(|e| {
                         error!("failed to extract {ff_url}: {e}");
                     });
                     sender.post(MainMessage::IncreaseCount);
