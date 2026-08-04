@@ -1,3 +1,4 @@
+use http::header::COOKIE;
 use scraper::Selector;
 use wreq::{Method, Uri};
 
@@ -28,7 +29,7 @@ pub async fn scrape_game(url: impl AsRef<str>) -> Result<GameInfo, ScrapeError> 
 
     let mut req = wreq::Request::new(Method::GET, url);
     if let Some(cookies) = FITGIRL_COOKIES.get() {
-        req.headers_mut().insert("Cookie", cookies.clone());
+        req.headers_mut().insert(COOKIE, cookies.clone());
     }
 
     let resp = HTTP_CLIENT
@@ -71,9 +72,7 @@ fn parse_html(document: impl AsRef<str>) -> Result<Vec<String>, ScrapeError> {
         "div.entry-content ul > li:nth-child(2) > div.su-spoiler > div.su-spoiler-content",
     )?;
 
-    let spoiler_content = document
-        .select(&file_hoster_spolier)
-        .collect::<Vec<_>>();
+    let spoiler_content = document.select(&file_hoster_spolier).collect::<Vec<_>>();
     match &*spoiler_content {
         &[] => Ok(vec![
             single_tag
