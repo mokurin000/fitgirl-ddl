@@ -296,7 +296,7 @@ async fn popup_message(
         .message(message)
         .style(level)
         .buttons(MessageBoxButton::Ok)
-        .show(parent)
+        .show(parent)?
         .await?;
     Ok(())
 }
