@@ -1,4 +1,3 @@
-use http::header::InvalidHeaderValue;
 use scraper::error::SelectorErrorKind;
 use thiserror::Error;
 
@@ -28,8 +27,8 @@ impl From<SelectorErrorKind<'_>> for ScrapeError {
 
 #[derive(Debug, Error)]
 pub enum ExtractError {
-    #[error("invalid cookies header!")]
-    InvalidCookies(#[from] InvalidHeaderValue),
+    #[error("cookies are required for ddl extraction!")]
+    CookiesMissing,
     #[error("filename was not found")]
     FilenameMissing,
     #[error("direct download link was not found")]

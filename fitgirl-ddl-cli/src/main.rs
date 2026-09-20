@@ -71,7 +71,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             workers,
             save_dir,
             game_urls,
-            cookies,
         }) => {
             info!("workers: {workers}, save_dir: {save_dir:?}");
             compio::fs::create_dir_all(&save_dir).await?;
@@ -108,9 +107,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 let ddls: Vec<_> = futures_util::stream::iter(fuckingfast_links)
                     .map(|ff_url| {
                         info!("processing {ff_url}");
-                        let cookies = cookies.clone();
                         async move {
-                            extract_ddl(&ff_url, &cookies).await.inspect_err(|e| {
+                            extract_ddl(&ff_url).await.inspect_err(|e| {
                                 error!("failed to extract {ff_url}: {e}");
                             })
                         }
