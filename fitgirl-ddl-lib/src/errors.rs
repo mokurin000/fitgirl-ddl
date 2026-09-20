@@ -27,8 +27,6 @@ impl From<SelectorErrorKind<'_>> for ScrapeError {
 
 #[derive(Debug, Error)]
 pub enum ExtractError {
-    #[error("cookies are required for ddl extraction!")]
-    CookiesMissing,
     #[error("filename was not found")]
     FilenameMissing,
     #[error("direct download link was not found")]
