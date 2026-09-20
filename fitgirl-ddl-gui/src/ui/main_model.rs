@@ -149,7 +149,7 @@ impl Component for MainModel {
                     .instruction("Are you sure to exit fitgirl-ddl?")
                     .style(MessageBoxStyle::Info)
                     .buttons(MessageBoxButton::Yes | MessageBoxButton::No)
-                    .show(Some(self.window.as_window()))
+                    .show(Some(self.window.as_window()))?
                     .await?
                     == MessageBoxResponse::Yes
                 {
