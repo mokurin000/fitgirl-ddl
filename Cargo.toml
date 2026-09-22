@@ -22,9 +22,9 @@ compio = { version = "0.19.1", default-features = false, features = [
 futures-util = "0.3.32"
 itertools = "0.15.0"
 
-wreq = { version = "6.0.0-rc", default-features = false, features = [
+wreq = { version = "0.16.1", default-features = false, features = [
     "webpki-roots",
 ] }
-wreq-util = "3.0.0-rc"
+wreq-util = "0.2.0"
 
 tracing = { version = "0.1.44" }
